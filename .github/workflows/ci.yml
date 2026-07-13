@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, worker]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        working-directory: apps/${{ matrix.app }}
+        run: pip install -e ".[dev]"
+      - name: Lint
+        working-directory: apps/${{ matrix.app }}
+        run: ruff check .
+      - name: Test
+        working-directory: apps/${{ matrix.app }}
+        run: pytest -q
