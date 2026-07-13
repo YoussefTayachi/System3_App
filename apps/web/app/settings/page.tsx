@@ -3,13 +3,21 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const PROVIDERS = [
-  { id: "google_maps", label: "Google Maps (Geocoding + Places API New)" },
-  { id: "openai", label: "OpenAI" },
-  { id: "hunter", label: "Hunter.io" },
+  { id: "google_maps", label: "Google Maps", hint: "Geocoding API + Places API (New) aktivieren" },
+  { id: "openai", label: "OpenAI", hint: "Key beginnt mit sk-" },
+  { id: "hunter", label: "Hunter.io", hint: "Für E-Mail-Suche nach Entscheidern" },
 ];
 
 const PROMPT_PLACEHOLDER =
   'z.B.: Menschlich und locker, wie von Mensch zu Mensch. Beispiel: "Hey, hab gesehen du arbeitest mit Tieren - ich hab 10 Jahre in dem Bereich gearbeitet und kenn das genau, dachte ich schreib dir mal."';
+
+const inputCls =
+  "rounded-lg border border-zinc-700/80 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 " +
+  "placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500";
+
+const btnCls =
+  "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg " +
+  "shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50";
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState<string[]>([]);
@@ -45,7 +53,7 @@ export default function SettingsPage() {
       .from("workspaces")
       .update({ personalization_prompt: prompt.trim() || null })
       .eq("id", wsId);
-    setPromptStatus(error ? "Fehler: " + error.message : "Gespeichert");
+    setPromptStatus(error ? "Fehler: " + error.message : "Gespeichert ✓");
   }
 
   async function save(provider: string) {
@@ -58,7 +66,7 @@ export default function SettingsPage() {
       body: JSON.stringify({ provider, key }),
     });
     if (res.ok) {
-      setStatus((s) => ({ ...s, [provider]: "Gespeichert (verschlüsselt)" }));
+      setStatus((s) => ({ ...s, [provider]: "Verschlüsselt gespeichert ✓" }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
       setValues((v) => ({ ...v, [provider]: "" }));
     } else {
@@ -68,16 +76,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="fade-up max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-bold">API-Keys</h1>
-        <p className="text-sm text-slate-500">
-          Deine Keys werden serverseitig verschlüsselt gespeichert und nie im Klartext angezeigt.
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Einstellungen</h1>
+        <p className="text-sm text-zinc-500">API-Keys und Personalisierungs-Stil</p>
       </div>
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="font-semibold">Personalisierungs-Stil</h2>
-        <p className="mb-3 text-sm text-slate-500">
+
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <h2 className="font-medium text-zinc-100">Personalisierungs-Stil</h2>
+        <p className="mb-4 mt-1 text-sm text-zinc-500">
           Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
           Leer lassen für den Standard-Stil (1 sachlicher Satz).
         </p>
@@ -86,46 +93,47 @@ export default function SettingsPage() {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={PROMPT_PLACEHOLDER}
           rows={5}
-          className="w-full rounded-lg border px-3 py-2 text-sm"
+          className={inputCls + " w-full resize-y"}
         />
         <div className="mt-3 flex items-center gap-3">
-          <button
-            onClick={savePrompt}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-          >
-            Speichern
-          </button>
-          {promptStatus && <span className="text-xs text-slate-500">{promptStatus}</span>}
+          <button onClick={savePrompt} className={btnCls}>Speichern</button>
+          {promptStatus && <span className="text-xs text-zinc-500">{promptStatus}</span>}
         </div>
       </div>
-      {PROVIDERS.map((p) => (
-        <div key={p.id} className="rounded-xl border bg-white p-6 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">{p.label}</h2>
-            {saved.includes(p.id) && (
-              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                hinterlegt
-              </span>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <input
-              type="password"
-              placeholder={saved.includes(p.id) ? "Neuen Key eingeben zum Ersetzen" : "API-Key"}
-              value={values[p.id] ?? ""}
-              onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
-              className="flex-1 rounded-lg border px-3 py-2 text-sm"
-            />
-            <button
-              onClick={() => save(p.id)}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-            >
-              Speichern
-            </button>
-          </div>
-          {status[p.id] && <p className="mt-2 text-xs text-slate-500">{status[p.id]}</p>}
+
+      <div>
+        <h2 className="mb-1 font-medium text-zinc-100">API-Keys</h2>
+        <p className="mb-4 text-sm text-zinc-500">
+          Deine Keys werden serverseitig verschlüsselt (AES) gespeichert und nie im Klartext angezeigt.
+        </p>
+        <div className="space-y-4">
+          {PROVIDERS.map((p) => (
+            <div key={p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="font-medium text-zinc-100">{p.label}</h3>
+                {saved.includes(p.id) && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    hinterlegt
+                  </span>
+                )}
+              </div>
+              <p className="mb-3 text-xs text-zinc-500">{p.hint}</p>
+              <div className="flex gap-3">
+                <input
+                  type="password"
+                  placeholder={saved.includes(p.id) ? "Neuen Key eingeben zum Ersetzen" : "API-Key"}
+                  value={values[p.id] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
+                  className={inputCls + " flex-1"}
+                />
+                <button onClick={() => save(p.id)} className={btnCls}>Speichern</button>
+              </div>
+              {status[p.id] && <p className="mt-2 text-xs text-zinc-500">{status[p.id]}</p>}
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
