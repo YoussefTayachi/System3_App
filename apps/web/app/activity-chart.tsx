@@ -5,7 +5,7 @@ export default function ActivityChart({ data }: { data: { day: string; leads: nu
       {data.map((d, i) => {
         const h = Math.max(4, (d.leads / max) * 100);
         return (
-          <div key={i} className="group relative flex-1">
+          <div key={i} className="group relative flex h-full flex-1 items-end">
             <div
               className={
                 "w-full rounded-sm transition-all " +
