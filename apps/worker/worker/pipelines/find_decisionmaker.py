@@ -1,13 +1,133 @@
 """Pipeline 2 — Port von n8n 'Find_Decisionmaker'.
 
-Verbesserungen ggü. n8n:
-- OpenAI Responses API mit web_search-Tool UND Structured Output (JSON Schema)
-  -> kein '```json'-Prompt-Parsing, kein Switch/Stop-and-Error mehr noetig
-- Rate-Limit/Retry via tenacity statt Wait-Nodes
-- Ergebnis -> public.contacts (source='ai_websearch'), Status am Business
+OpenAI Responses API mit web_search-Tool + Structured Output (JSON Schema).
+Ersetzt das '```json'-Prompt-Parsing und die Switch/Stop-and-Error-Logik aus n8n.
 """
+import json
+
+from openai import OpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from worker.db import sb
+from worker.keys import get_api_key
+
+MODEL = "gpt-4.1-mini"
+
+SYSTEM_PROMPT = (
+    "You are an expert researcher finding the business owner / decision makers of a given "
+    "business. Use web search. For each person also find their email address and social "
+    "profiles (LinkedIn, Instagram, Twitter/X, Facebook) if available. "
+    "Use the string 'NA' for anything you cannot find. Only include real people you found "
+    "evidence for; if you find nobody, return an empty persons list."
+)
+
+SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "company_name": {"type": "string"},
+        "persons": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "name": {"type": "string"},
+                    "title": {"type": "string"},
+                    "email": {"type": "string"},
+                    "linkedin": {"type": "string"},
+                    "instagram": {"type": "string"},
+                    "twitter": {"type": "string"},
+                    "facebook": {"type": "string"},
+                },
+                "required": [
+                    "name", "title", "email", "linkedin", "instagram", "twitter", "facebook",
+                ],
+            },
+        },
+    },
+    "required": ["company_name", "persons"],
+}
+
+
+def _clean(value: str | None) -> str | None:
+    return None if not value or value.strip().upper() == "NA" else value.strip()
+
+
+def parse_persons(data: dict) -> list[dict]:
+    out = []
+    for p in data.get("persons", []):
+        name = _clean(p.get("name"))
+        if name is None:
+            continue
+        parts = name.split(" ", 1)
+        out.append(
+            {
+                "full_name": name,
+                "first_name": parts[0],
+                "last_name": parts[1] if len(parts) > 1 else None,
+                "title": _clean(p.get("title")),
+                "email": _clean(p.get("email")),
+                "linkedin": _clean(p.get("linkedin")),
+                "instagram": _clean(p.get("instagram")),
+                "twitter": _clean(p.get("twitter")),
+                "facebook": _clean(p.get("facebook")),
+                "source": "ai_websearch",
+            }
+        )
+    return out
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=5, max=60), reraise=True)
+def research(business: dict, api_key: str) -> dict:
+    client = OpenAI(api_key=api_key)
+    resp = client.responses.create(
+        model=MODEL,
+        tools=[{"type": "web_search"}],
+        input=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": (
+                    f"Company Name: {business['name']}\n"
+                    f"Website: {business.get('website') or 'NA'}\n"
+                    f"Address: {business.get('address') or 'NA'}"
+                ),
+            },
+        ],
+        text={
+            "format": {
+                "type": "json_schema",
+                "name": "decisionmakers",
+                "schema": SCHEMA,
+                "strict": True,
+            }
+        },
+    )
+    return json.loads(resp.output_text)
 
 
 def run(job: dict) -> None:
-    # TODO Phase 1
-    raise NotImplementedError
+    ws = job["workspace_id"]
+    business_id = job["payload"]["business_id"]
+    biz = sb().table("businesses").select("*").eq("id", business_id).single().execute().data
+
+    def set_status(status: str) -> None:
+        sb().table("businesses").update({"decisionmaker_status": status}).eq(
+            "id", business_id
+        ).execute()
+
+    set_status("running")
+    try:
+        data = research(biz, get_api_key(ws, "openai"))
+        contacts = [
+            c | {"workspace_id": ws, "business_id": business_id} for c in parse_persons(data)
+        ]
+        if contacts:
+            sb().table("contacts").insert(contacts).execute()
+            set_status("found")
+        else:
+            set_status("not_found")
+    except Exception:
+        set_status("failed")
+        raise
