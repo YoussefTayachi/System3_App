@@ -107,6 +107,7 @@ def run(job: dict) -> None:
                 enqueue(ws, "find_decisionmaker", {"business_id": b["id"]})
                 if b.get("website"):
                     enqueue(ws, "hunt_persons", {"business_id": b["id"]})
+                    enqueue(ws, "personalize", {"business_id": b["id"]})
     except Exception as exc:
         sb().table("searches").update({"status": "failed", "error": str(exc)[:1000]}).eq(
             "id", search_id

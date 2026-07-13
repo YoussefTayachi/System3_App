@@ -4,6 +4,7 @@ OpenAI Responses API mit web_search-Tool + Structured Output (JSON Schema).
 Ersetzt das '```json'-Prompt-Parsing und die Switch/Stop-and-Error-Logik aus n8n.
 """
 import json
+import re
 
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -15,7 +16,9 @@ MODEL = "gpt-4.1-mini"
 
 SYSTEM_PROMPT = (
     "You are an expert researcher finding the business owner / decision makers of a given "
-    "business. Use web search. For each person also find their email address and social "
+    "business. Use web search. Only include natural persons (individual human beings) - "
+    "NEVER companies, holdings, trusts or other legal entities as persons. "
+    "For each person also find their email address and social "
     "profiles (LinkedIn, Instagram, Twitter/X, Facebook) if available. "
     "Use the string 'NA' for anything you cannot find. Only include real people you found "
     "evidence for; if you find nobody, return an empty persons list."
@@ -50,6 +53,18 @@ SCHEMA = {
 }
 
 
+COMPANY_NAME_PATTERN = re.compile(
+    r"\b(gmbh|m\.?b\.?h|ag|kg|og|ug|e\.u\.|ltd|llc|inc|corp|co\.|s\.?a\.?r\.?l|"
+    r"b\.?v\.|n\.?v\.|plc|s\.?r\.?o|holding|group|ventures|capital|restaurants?)\b|&",
+    re.IGNORECASE,
+)
+
+
+def is_company_name(name: str) -> bool:
+    """Erkennt juristische Personen, die die KI faelschlich als Person liefert."""
+    return bool(COMPANY_NAME_PATTERN.search(name))
+
+
 def _clean(value: str | None) -> str | None:
     return None if not value or value.strip().upper() == "NA" else value.strip()
 
@@ -58,7 +73,7 @@ def parse_persons(data: dict) -> list[dict]:
     out = []
     for p in data.get("persons", []):
         name = _clean(p.get("name"))
-        if name is None:
+        if name is None or is_company_name(name):
             continue
         parts = name.split(" ", 1)
         out.append(

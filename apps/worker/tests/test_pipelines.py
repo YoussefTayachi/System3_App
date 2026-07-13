@@ -104,3 +104,15 @@ def test_parse_persons_na_handling():
     assert rows[0]["last_name"] == "Sidhu"
     assert rows[0]["email"] is None
     assert rows[0]["linkedin"] == "https://linkedin.com/in/shamir"
+
+
+def test_is_company_name():
+    from worker.pipelines.find_decisionmaker import is_company_name
+
+    assert is_company_name("Vilevi GmbH")
+    assert is_company_name("S&P Global Co., Ltd.")
+    assert is_company_name("S&P Restaurants Ltd.")
+    assert is_company_name("ACME Holding")
+    assert not is_company_name("Shamir Sidhu")
+    assert not is_company_name("Renate Kornas")
+    assert not is_company_name("Dr. Stefan Kudlacek")

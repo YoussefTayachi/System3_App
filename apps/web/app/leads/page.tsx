@@ -4,7 +4,7 @@ export default async function LeadsPage() {
   const supabase = await createClient();
   const { data: contacts } = await supabase
     .from("contacts")
-    .select("*, businesses(name, website, address)")
+    .select("*, businesses(name, website, address, personalization)")
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -23,6 +23,7 @@ export default async function LeadsPage() {
               <th className="px-4 py-2">E-Mail</th>
               <th className="px-4 py-2">Quelle</th>
               <th className="px-4 py-2">LinkedIn</th>
+              <th className="px-4 py-2">Personalisierung</th>
             </tr>
           </thead>
           <tbody>
@@ -71,11 +72,14 @@ export default async function LeadsPage() {
                     <span className="text-slate-400">—</span>
                   )}
                 </td>
+                <td className="max-w-xs px-4 py-2 text-xs text-slate-500">
+                  {c.businesses?.personalization ?? "—"}
+                </td>
               </tr>
             ))}
             {(contacts ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                   Noch keine Leads.
                 </td>
               </tr>
