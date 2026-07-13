@@ -116,3 +116,14 @@ def test_is_company_name():
     assert not is_company_name("Shamir Sidhu")
     assert not is_company_name("Renate Kornas")
     assert not is_company_name("Dr. Stefan Kudlacek")
+
+
+def test_build_system_prompt():
+    from worker.pipelines.personalize import DEFAULT_STYLE, build_system_prompt
+
+    assert DEFAULT_STYLE in build_system_prompt(None)
+    assert DEFAULT_STYLE in build_system_prompt("   ")
+    custom = 'Menschlich und locker, z.B. "Hey, hab gesehen du arbeitest mit Tieren..."'
+    prompt = build_system_prompt(custom)
+    assert custom in prompt
+    assert DEFAULT_STYLE not in prompt

@@ -8,17 +8,45 @@ const PROVIDERS = [
   { id: "hunter", label: "Hunter.io" },
 ];
 
+const PROMPT_PLACEHOLDER =
+  'z.B.: Menschlich und locker, wie von Mensch zu Mensch. Beispiel: "Hey, hab gesehen du arbeitest mit Tieren - ich hab 10 Jahre in dem Bereich gearbeitet und kenn das genau, dachte ich schreib dir mal."';
+
 export default function SettingsPage() {
   const [saved, setSaved] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
+  const [wsId, setWsId] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState("");
+  const [promptStatus, setPromptStatus] = useState("");
 
   useEffect(() => {
-    createClient()
+    const supabase = createClient();
+    supabase
       .from("api_keys")
       .select("provider")
       .then(({ data }) => setSaved((data ?? []).map((r) => r.provider)));
+    supabase
+      .from("workspaces")
+      .select("id, personalization_prompt")
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setWsId(data.id);
+          setPrompt(data.personalization_prompt ?? "");
+        }
+      });
   }, []);
+
+  async function savePrompt() {
+    if (!wsId) return;
+    setPromptStatus("...");
+    const { error } = await createClient()
+      .from("workspaces")
+      .update({ personalization_prompt: prompt.trim() || null })
+      .eq("id", wsId);
+    setPromptStatus(error ? "Fehler: " + error.message : "Gespeichert");
+  }
 
   async function save(provider: string) {
     const key = values[provider];
@@ -46,6 +74,29 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500">
           Deine Keys werden serverseitig verschlüsselt gespeichert und nie im Klartext angezeigt.
         </p>
+      </div>
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="font-semibold">Personalisierungs-Stil</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
+          Leer lassen für den Standard-Stil (1 sachlicher Satz).
+        </p>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={PROMPT_PLACEHOLDER}
+          rows={5}
+          className="w-full rounded-lg border px-3 py-2 text-sm"
+        />
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={savePrompt}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            Speichern
+          </button>
+          {promptStatus && <span className="text-xs text-slate-500">{promptStatus}</span>}
+        </div>
       </div>
       {PROVIDERS.map((p) => (
         <div key={p.id} className="rounded-xl border bg-white p-6 shadow-sm">
