@@ -58,3 +58,12 @@ export function IconCost({ className = "h-4 w-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function IconShield({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z" />
+      <path d="m9.5 11.5 2 2 3.5-4" />
+    </svg>
+  );
+}

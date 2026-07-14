@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AutoRefresh from "../auto-refresh";
+import { HardDeleteButton, RestoreButton, TrashButton } from "./search-actions";
 
 type SearchRow = {
   id: string;
+  name: string;
   query: string;
+  schedule: string;
   location: string;
   source: string;
   status: string;
@@ -18,8 +21,16 @@ type SearchRow = {
 
 export default async function SearchesPage() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("search_overview");
+  const [{ data }, trashRes] = await Promise.all([
+    supabase.rpc("search_overview"),
+    supabase
+      .from("searches")
+      .select("id, name, query, location, deleted_at")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false }),
+  ]);
   const searches = (data ?? []) as SearchRow[];
+  const trash = trashRes.data ?? [];
   const anyRunning = searches.some(
     (s) => s.status === "pending" || s.status === "running" || s.businesses_done < s.businesses
   );
@@ -56,10 +67,15 @@ export default async function SearchesPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2.5">
-                    <span className="truncate font-medium text-zinc-100">{s.query}</span>
+                    <span className="truncate font-medium text-zinc-100">{s.name}</span>
                     <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
                       {s.source === "corporate" ? "Corporate" : "Maps"}
                     </span>
+                    {s.schedule !== "none" && (
+                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-300">
+                        Abo · {s.schedule === "weekly" ? "wöchentlich" : "täglich"}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-0.5 text-xs text-zinc-500">
                     {s.location} · {new Date(s.created_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}
@@ -96,6 +112,7 @@ export default async function SearchesPage() {
                     </span>
                   )}
                 </div>
+                <TrashButton searchId={s.id} />
               </div>
             </Link>
           );
@@ -106,6 +123,26 @@ export default async function SearchesPage() {
           </div>
         )}
       </div>
+
+      {trash.length > 0 && (
+        <details className="rounded-2xl border border-zinc-800/60 bg-zinc-900/20">
+          <summary className="cursor-pointer px-5 py-3 text-sm text-zinc-500 hover:text-zinc-300">
+            Papierkorb ({trash.length})
+          </summary>
+          <div className="divide-y divide-zinc-800/60 border-t border-zinc-800/60">
+            {trash.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                <span className="min-w-0 flex-1 truncate text-sm text-zinc-400">
+                  {t.name ?? t.query}
+                  <span className="ml-2 text-xs text-zinc-600">{t.location}</span>
+                </span>
+                <RestoreButton searchId={t.id} />
+                <HardDeleteButton searchId={t.id} />
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

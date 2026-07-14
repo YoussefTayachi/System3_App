@@ -11,6 +11,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from worker.db import sb
 from worker.keys import get_api_key
 from worker.pipelines.discover import discover_companies, parse_discover_company
+from worker.suppression import domain_of, load_suppression
 from worker.queue import enqueue
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
@@ -76,10 +77,14 @@ def run_corporate(search: dict, ws: str) -> None:
         for b in sb().table("businesses").select("website").eq("workspace_id", ws).execute().data
         if b.get("website")
     }
+    _, blocked_domains = load_suppression(ws)
     rows = []
     for c in companies:
         row = parse_discover_company(c)
         if not row["website"] or row["website"] in existing:
+            continue
+        d = domain_of(row["website"])
+        if d and d in blocked_domains:
             continue
         rows.append(row | {"workspace_id": ws, "search_id": search["id"]})
         existing.add(row["website"])
@@ -103,15 +108,30 @@ def run(job: dict) -> None:
             return
         api_key = get_api_key(ws, "google_maps")
         loc = geocode(search["location"], api_key)
-        collected, token = 0, ""
-        while collected < search["max_results"]:
+        known = {
+            b["place_id"]
+            for b in sb().table("businesses").select("place_id").eq("workspace_id", ws).execute().data
+            if b.get("place_id")
+        }
+        _, blocked_domains = load_suppression(ws)
+        collected, token, pages = 0, "", 0
+        while collected < search["max_results"] and pages < 10:
             data = search_places_page(
                 search["query"], loc["lat"], loc["lng"], search["radius_m"], api_key, token
             )
-            rows = [
-                parse_place(p) | {"workspace_id": ws, "search_id": search_id}
-                for p in (data.get("places") or [])[: search["max_results"] - collected]
-            ]
+            pages += 1
+            rows = []
+            for pl in data.get("places") or []:
+                if collected + len(rows) >= search["max_results"]:
+                    break
+                parsed = parse_place(pl)
+                if not parsed["place_id"] or parsed["place_id"] in known:
+                    continue
+                d = domain_of(parsed.get("website"))
+                if d and d in blocked_domains:
+                    continue
+                known.add(parsed["place_id"])
+                rows.append(parsed | {"workspace_id": ws, "search_id": search_id})
             if rows:
                 sb().table("businesses").upsert(
                     rows, on_conflict="workspace_id,place_id"
@@ -133,7 +153,13 @@ def _finish(search_id: str, ws: str, auto_enrich: bool) -> None:
     if not auto_enrich:
         return
     for b in (
-        sb().table("businesses").select("id,website").eq("search_id", search_id).execute().data
+        sb()
+        .table("businesses")
+        .select("id,website")
+        .eq("search_id", search_id)
+        .eq("decisionmaker_status", "pending")
+        .execute()
+        .data
     ):
         enqueue(ws, "find_decisionmaker", {"business_id": b["id"]})
         if b.get("website"):

@@ -10,6 +10,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
 from worker.keys import get_api_key
+from worker.suppression import is_suppressed, load_suppression
 
 HUNTER_URL = "https://api.hunter.io/v2/domain-search"
 
@@ -75,9 +76,11 @@ def run(job: dict) -> None:
     set_status("running")
     try:
         payload = domain_search(extract_domain(biz["website"]), get_api_key(ws, "hunter"))
+        emails, domains = load_suppression(ws)
         contacts = [
             c | {"workspace_id": ws, "business_id": business_id}
             for c in parse_hunter_emails(payload)
+            if not is_suppressed(emails, domains, email=c.get("email"))
         ]
         if contacts:
             sb().table("contacts").insert(contacts).execute()

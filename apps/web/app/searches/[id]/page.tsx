@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { filterSuppressed } from "@/lib/suppression";
 import LeadsTable from "../../leads/leads-table";
+import SearchSettings from "./search-settings";
 
 export default async function SearchDetailPage({
   params,
@@ -9,7 +11,7 @@ export default async function SearchDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [searchRes, contactsRes] = await Promise.all([
+  const [searchRes, contactsRes, suppressionRes] = await Promise.all([
     supabase.from("searches").select("*").eq("id", id).single(),
     supabase
       .from("contacts")
@@ -17,6 +19,7 @@ export default async function SearchDetailPage({
       .eq("businesses.search_id", id)
       .order("created_at", { ascending: false })
       .limit(1000),
+    supabase.from("suppression_list").select("email,domain"),
   ]);
   const search = searchRes.data;
 
@@ -24,26 +27,32 @@ export default async function SearchDetailPage({
     return <p className="text-zinc-500">Suche nicht gefunden.</p>;
   }
 
+  const contacts = filterSuppressed(contactsRes.data ?? [], suppressionRes.data ?? []);
+
   return (
     <div className="fade-up space-y-6">
       <div>
         <Link href="/searches" className="text-xs text-zinc-500 hover:text-zinc-200">
           ← Alle Suchen
         </Link>
-        <div className="mt-1 flex items-center gap-2.5">
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-100">{search.query}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2.5">
+          <SearchSettings
+            searchId={search.id}
+            initialName={search.name ?? search.query}
+            initialSchedule={search.schedule ?? "none"}
+          />
           <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
             {search.source === "corporate" ? "Corporate" : "Maps"}
           </span>
         </div>
         <p className="text-sm text-zinc-500">
-          {search.location} ·{" "}
+          {search.query} · {search.location} ·{" "}
           {new Date(search.created_at).toLocaleString("de-DE", { dateStyle: "long", timeStyle: "short" })}
         </p>
       </div>
       <LeadsTable
-        contacts={contactsRes.data ?? []}
-        exportName={search.query + " - " + search.location}
+        contacts={contacts}
+        exportName={(search.name ?? search.query) + " - " + search.location}
       />
     </div>
   );

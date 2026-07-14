@@ -1,8 +1,10 @@
 """Worker-Entrypoint: pollt public.jobs und dispatcht an Pipelines."""
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 
 from worker import queue
+from worker.db import sb
 from worker.pipelines import find_decisionmaker, get_businesses, hunt_persons, personalize
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -17,11 +19,44 @@ HANDLERS = {
 }
 
 POLL_INTERVAL_S = 5
+SCHEDULE_INTERVALS = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1)}
+
+
+def process_due_schedules() -> None:
+    """Lead-Abos: fällige wiederkehrende Suchen erneut anstoßen (füllt dieselbe Liste)."""
+    now = datetime.now(timezone.utc).isoformat()
+    due = (
+        sb()
+        .table("searches")
+        .select("id,workspace_id,schedule")
+        .neq("schedule", "none")
+        .lte("next_run_at", now)
+        .is_("deleted_at", "null")
+        .execute()
+        .data
+    )
+    for s in due:
+        interval = SCHEDULE_INTERVALS.get(s["schedule"])
+        if interval is None:
+            continue
+        next_run = datetime.now(timezone.utc) + interval
+        sb().table("searches").update(
+            {"next_run_at": next_run.isoformat(), "status": "pending"}
+        ).eq("id", s["id"]).execute()
+        queue.enqueue(s["workspace_id"], "get_businesses", {"search_id": s["id"]})
+        log.info("Abo-Suche %s erneut eingeplant (%s)", s["id"], s["schedule"])
 
 
 def main() -> None:
     log.info("Worker gestartet (%s)", queue.WORKER_ID)
+    last_schedule_check = 0.0
     while True:
+        if time.monotonic() - last_schedule_check > 60:
+            last_schedule_check = time.monotonic()
+            try:
+                process_due_schedules()
+            except Exception:  # noqa: BLE001
+                log.exception("Abo-Scheduler fehlgeschlagen")
         job = queue.claim_job()
         if job is None:
             time.sleep(POLL_INTERVAL_S)

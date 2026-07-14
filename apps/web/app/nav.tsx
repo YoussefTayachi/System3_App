@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconLeads, IconSearch, IconSettings } from "./icons";
+import { IconDashboard, IconLeads, IconSearch, IconSettings, IconShield } from "./icons";
 
 const ITEMS = [
   { href: "/", label: "Dashboard", icon: IconDashboard },
   { href: "/searches", label: "Suchen", icon: IconSearch },
   { href: "/leads", label: "Alle Leads", icon: IconLeads },
+  { href: "/blocklist", label: "Blockliste", icon: IconShield },
   { href: "/settings", label: "Einstellungen", icon: IconSettings },
 ];
 

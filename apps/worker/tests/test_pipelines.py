@@ -155,3 +155,17 @@ def test_parse_discover_company():
     row = parse_discover_company({"domain": "kotax.com", "organization": "KOTAX"})
     assert row == {"place_id": None, "name": "KOTAX", "website": "https://kotax.com"}
     assert parse_discover_company({})["website"] is None
+
+
+def test_suppression_matching():
+    from worker.suppression import domain_of, is_suppressed
+
+    emails = {"chef@bestandskunde.de"}
+    domains = {"kunde-gmbh.at"}
+    assert domain_of("https://www.kunde-gmbh.at/impressum") == "kunde-gmbh.at"
+    assert domain_of("info@kunde-gmbh.at") == "kunde-gmbh.at"
+    assert is_suppressed(emails, domains, email="chef@bestandskunde.de")
+    assert is_suppressed(emails, domains, email="neu@kunde-gmbh.at")
+    assert is_suppressed(emails, domains, website="http://kunde-gmbh.at")
+    assert not is_suppressed(emails, domains, email="jemand@anders.de")
+    assert not is_suppressed(emails, domains, website="https://anders.de")

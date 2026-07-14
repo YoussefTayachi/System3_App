@@ -11,6 +11,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
 from worker.keys import get_api_key
+from worker.suppression import is_suppressed, load_suppression
 
 MODEL = "gpt-4.1-mini"
 
@@ -138,8 +139,11 @@ def run(job: dict) -> None:
     set_status("running")
     try:
         data = research(biz, get_api_key(ws, "openai"))
+        emails, domains = load_suppression(ws)
         contacts = [
-            c | {"workspace_id": ws, "business_id": business_id} for c in parse_persons(data)
+            c | {"workspace_id": ws, "business_id": business_id}
+            for c in parse_persons(data)
+            if not is_suppressed(emails, domains, email=c.get("email"))
         ]
         if contacts:
             sb().table("contacts").insert(contacts).execute()

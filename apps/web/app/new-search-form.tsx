@@ -28,6 +28,8 @@ const labelCls = "flex flex-col text-xs font-medium text-zinc-400";
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<"maps" | "corporate">("maps");
+  const [listName, setListName] = useState("");
+  const [schedule, setSchedule] = useState("none");
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
   const [maxResults, setMaxResults] = useState(10);
@@ -44,13 +46,26 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const nextRun =
+      schedule === "daily"
+        ? new Date(Date.now() + 86400000).toISOString()
+        : schedule === "weekly"
+          ? new Date(Date.now() + 7 * 86400000).toISOString()
+          : null;
+    const base = {
+      name: listName.trim() || null,
+      schedule,
+      next_run_at: nextRun,
+    };
     const row: Record<string, unknown> =
       mode === "maps"
         ? {
+            ...base,
             workspace_id: workspaceId, source: "maps", query, location,
             max_results: maxResults, radius_m: radius,
           }
         : {
+            ...base,
             workspace_id: workspaceId, source: "corporate",
             query: [industry, keywords].filter(Boolean).join(" · ") || "Corporate-Suche",
             location: [city, country].filter(Boolean).join(", "),
@@ -63,7 +78,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       setError(error.message);
       return;
     }
-    setQuery(""); setLocation(""); setKeywords(""); setCity("");
+    setQuery(""); setLocation(""); setKeywords(""); setCity(""); setListName("");
     router.refresh();
   }
 
@@ -82,6 +97,21 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
         </button>
       </div>
 
+      <div className="flex flex-wrap items-end gap-3">
+        <label className={labelCls + " min-w-52 flex-1"}>
+          Listen-Name (optional)
+          <input placeholder='z.B. "Makler Wien Q3"' value={listName}
+            onChange={(e) => setListName(e.target.value)} className={inputCls} />
+        </label>
+        <label className={labelCls}>
+          Lead-Abo
+          <select value={schedule} onChange={(e) => setSchedule(e.target.value)} className={inputCls + " w-44"}>
+            <option value="none">Einmalig</option>
+            <option value="weekly">Wöchentlich neue Leads</option>
+            <option value="daily">Täglich neue Leads</option>
+          </select>
+        </label>
+      </div>
       {mode === "maps" ? (
         <div className="flex flex-wrap items-end gap-3">
           <label className={labelCls + " flex-1"}>
