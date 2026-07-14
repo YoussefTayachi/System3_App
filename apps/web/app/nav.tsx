@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconLeads, IconSettings } from "./icons";
+import { IconDashboard, IconLeads, IconSearch, IconSettings } from "./icons";
 
 const ITEMS = [
   { href: "/", label: "Dashboard", icon: IconDashboard },
-  { href: "/leads", label: "Leads", icon: IconLeads },
+  { href: "/searches", label: "Suchen", icon: IconSearch },
+  { href: "/leads", label: "Alle Leads", icon: IconLeads },
   { href: "/settings", label: "Einstellungen", icon: IconSettings },
 ];
 
@@ -14,7 +15,7 @@ export default function Nav() {
   return (
     <nav className="flex flex-col gap-1">
       {ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href;
+        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
             key={href}

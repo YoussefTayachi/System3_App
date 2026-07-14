@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NewSearchForm from "./new-search-form";
 import AutoRefresh from "./auto-refresh";
@@ -98,9 +99,12 @@ export default async function Dashboard() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40">
-        <h2 className="border-b border-zinc-800 px-6 py-4 font-medium text-zinc-100">
-          Letzte Suchen
-        </h2>
+        <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+          <h2 className="font-medium text-zinc-100">Letzte Suchen</h2>
+          <Link href="/searches" className="text-xs text-zinc-500 hover:text-zinc-200">
+            Alle anzeigen →
+          </Link>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500">
@@ -115,7 +119,11 @@ export default async function Dashboard() {
           <tbody>
             {searches.map((s) => (
               <tr key={s.id} className="border-b border-zinc-800/60 transition-colors last:border-0 hover:bg-zinc-800/30">
-                <td className="px-6 py-3 font-medium text-zinc-200">{s.query}</td>
+                <td className="px-6 py-3 font-medium text-zinc-200">
+                  <Link href={"/searches/" + s.id} className="underline-offset-4 hover:text-indigo-300 hover:underline">
+                    {s.query}
+                  </Link>
+                </td>
                 <td className="px-6 py-3">
                   <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
                     {s.source === "corporate" ? "Corporate" : "Maps"}
