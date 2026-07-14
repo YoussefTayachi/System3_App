@@ -5,6 +5,8 @@ import { IconSearch } from "../icons";
 type Contact = {
   id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   title: string | null;
   email: string | null;
   email_confidence: number | null;
@@ -22,6 +24,8 @@ type Contact = {
 type Merged = {
   id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   title: string | null;
   email: string | null;
   email_confidence: number | null;
@@ -60,6 +64,8 @@ function mergeInto(target: Merged, c: Contact) {
     target.email_confidence = c.email_confidence;
   }
   if (!target.phone && c.phone) target.phone = c.phone;
+  if (!target.first_name && c.first_name) target.first_name = c.first_name;
+  if (!target.last_name && c.last_name) target.last_name = c.last_name;
   if (!target.linkedin && c.linkedin) target.linkedin = c.linkedin;
   if (!target.sources.includes(c.source)) target.sources.push(c.source);
 }
@@ -95,6 +101,8 @@ function groupContacts(contacts: Contact[]): Group[] {
       g.contacts.push({
         id: c.id,
         full_name: c.full_name,
+        first_name: c.first_name,
+        last_name: c.last_name,
         title: c.title,
         email: c.email,
         email_confidence: c.email_confidence,
@@ -120,6 +128,44 @@ function toCsv(groups: Group[]): string {
     )
   );
   return [header.join(";"), ...lines].join("\n");
+}
+
+function splitName(c: Merged): { first: string; last: string } {
+  if (c.first_name || c.last_name) {
+    return { first: c.first_name ?? "", last: c.last_name ?? "" };
+  }
+  const parts = (c.full_name ?? "").split(" ");
+  return { first: parts[0] ?? "", last: parts.slice(1).join(" ") };
+}
+
+function toInstantlyCsv(groups: Group[]): string {
+  // Header exakt so benannt, dass Instantlys CSV-Import sie automatisch mappt.
+  // Extra-Spalten (personalization, title, linkedin) werden zu Custom-Variables:
+  // im Template nutzbar als {{personalization}}, {{title}}, {{linkedin}}
+  const header = [
+    "email", "first_name", "last_name", "company_name", "phone",
+    "website", "personalization", "title", "linkedin",
+  ];
+  const esc = (v: unknown) => {
+    const s = v == null ? "" : String(v).replace(/\r?\n/g, " ");
+    return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const g of groups) {
+    for (const c of g.contacts) {
+      const email = c.email?.trim().toLowerCase();
+      if (!email || seen.has(email)) continue;
+      seen.add(email);
+      const { first, last } = splitName(c);
+      lines.push(
+        [email, first, last, g.name, c.phone, g.website, g.personalization, c.title, c.linkedin]
+          .map(esc)
+          .join(",")
+      );
+    }
+  }
+  return [header.join(","), ...lines].join("\n");
 }
 
 export default function LeadsTable({
@@ -171,12 +217,12 @@ export default function LeadsTable({
     });
   }
 
-  function exportCsv() {
-    const blob = new Blob(["﻿" + toCsv(filtered)], { type: "text/csv;charset=utf-8" });
+  function download(content: string, suffix: string) {
+    const blob = new Blob(["\ufeff" + content], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = exportName.replace(/[^\wäöüÄÖÜß -]/g, "").trim() + ".csv";
+    a.download = exportName.replace(/[^\wäöüÄÖÜß -]/g, "").trim() + suffix;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -220,11 +266,19 @@ export default function LeadsTable({
           {filtered.length} Firmen · {shownContacts} von {totalContacts} Kontakten
         </span>
         <button
-          onClick={exportCsv}
+          onClick={() => download(toInstantlyCsv(filtered), "-instantly.csv")}
+          disabled={shownContacts === 0}
+          title="Spalten exakt für Instantlys CSV-Import benannt — Variablen wie {{personalization}} sind direkt im Template nutzbar"
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-40"
+        >
+          Für Instantly exportieren
+        </button>
+        <button
+          onClick={() => download(toCsv(filtered), ".csv")}
           disabled={shownContacts === 0}
           className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white disabled:opacity-40"
         >
-          CSV exportieren
+          Excel-CSV
         </button>
       </div>
 
