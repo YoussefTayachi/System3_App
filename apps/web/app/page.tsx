@@ -105,6 +105,7 @@ export default async function Dashboard() {
           <thead>
             <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500">
               <th className="px-6 py-2.5 font-medium">Nische</th>
+              <th className="px-6 py-2.5 font-medium">Quelle</th>
               <th className="px-6 py-2.5 font-medium">Ort</th>
               <th className="px-6 py-2.5 font-medium">Max</th>
               <th className="px-6 py-2.5 font-medium">Status</th>
@@ -115,6 +116,11 @@ export default async function Dashboard() {
             {searches.map((s) => (
               <tr key={s.id} className="border-b border-zinc-800/60 transition-colors last:border-0 hover:bg-zinc-800/30">
                 <td className="px-6 py-3 font-medium text-zinc-200">{s.query}</td>
+                <td className="px-6 py-3">
+                  <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
+                    {s.source === "corporate" ? "Corporate" : "Maps"}
+                  </span>
+                </td>
                 <td className="px-6 py-3 text-zinc-400">{s.location}</td>
                 <td className="px-6 py-3 text-zinc-400">{s.max_results}</td>
                 <td className="px-6 py-3"><StatusBadge status={s.status} /></td>
@@ -125,7 +131,7 @@ export default async function Dashboard() {
             ))}
             {searches.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-zinc-500">
+                <td colSpan={6} className="px-6 py-10 text-center text-zinc-500">
                   Noch keine Suchen — starte oben deine erste.
                 </td>
               </tr>

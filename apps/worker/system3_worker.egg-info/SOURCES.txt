@@ -13,6 +13,7 @@ worker/keys.py
 worker/main.py
 worker/queue.py
 worker/pipelines/__init__.py
+worker/pipelines/discover.py
 worker/pipelines/find_decisionmaker.py
 worker/pipelines/get_businesses.py
 worker/pipelines/hunt_persons.py

@@ -8,6 +8,7 @@ type Contact = {
   title: string | null;
   email: string | null;
   email_confidence: number | null;
+  phone: string | null;
   linkedin: string | null;
   source: string;
   businesses: {
@@ -63,6 +64,7 @@ export default function LeadsTable({ contacts }: { contacts: Contact[] }) {
               <th className="px-4 py-2.5 font-medium">Person</th>
               <th className="px-4 py-2.5 font-medium">Position</th>
               <th className="px-4 py-2.5 font-medium">E-Mail</th>
+              <th className="px-4 py-2.5 font-medium">Telefon</th>
               <th className="px-4 py-2.5 font-medium">Quelle</th>
               <th className="px-4 py-2.5 font-medium">Personalisierung</th>
             </tr>
@@ -103,6 +105,7 @@ export default function LeadsTable({ contacts }: { contacts: Contact[] }) {
                     <span className="text-zinc-600">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3 text-zinc-300">{c.phone ?? <span className="text-zinc-600">—</span>}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
                     {c.source === "ai_websearch" ? "KI" : c.source === "hunter" ? "Hunter" : c.source}
@@ -115,7 +118,7 @@ export default function LeadsTable({ contacts }: { contacts: Contact[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-zinc-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-zinc-500">
                   Keine Leads gefunden.
                 </td>
               </tr>

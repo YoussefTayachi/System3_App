@@ -18,7 +18,8 @@ SYSTEM_PROMPT = (
     "You are an expert researcher finding the business owner / decision makers of a given "
     "business. Use web search. Only include natural persons (individual human beings) - "
     "NEVER companies, holdings, trusts or other legal entities as persons. "
-    "For each person also find their email address and social "
+    "For each person also find their email address, their direct/mobile phone number "
+    "(check the website imprint/contact page and public listings) and social "
     "profiles (LinkedIn, Instagram, Twitter/X, Facebook) if available. "
     "Use the string 'NA' for anything you cannot find. Only include real people you found "
     "evidence for; if you find nobody, return an empty persons list."
@@ -38,13 +39,14 @@ SCHEMA = {
                     "name": {"type": "string"},
                     "title": {"type": "string"},
                     "email": {"type": "string"},
+                    "phone": {"type": "string"},
                     "linkedin": {"type": "string"},
                     "instagram": {"type": "string"},
                     "twitter": {"type": "string"},
                     "facebook": {"type": "string"},
                 },
                 "required": [
-                    "name", "title", "email", "linkedin", "instagram", "twitter", "facebook",
+                    "name", "title", "email", "phone", "linkedin", "instagram", "twitter", "facebook",
                 ],
             },
         },
@@ -83,6 +85,7 @@ def parse_persons(data: dict) -> list[dict]:
                 "last_name": parts[1] if len(parts) > 1 else None,
                 "title": _clean(p.get("title")),
                 "email": _clean(p.get("email")),
+                "phone": _clean(p.get("phone")),
                 "linkedin": _clean(p.get("linkedin")),
                 "instagram": _clean(p.get("instagram")),
                 "twitter": _clean(p.get("twitter")),

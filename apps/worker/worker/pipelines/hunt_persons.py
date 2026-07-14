@@ -36,6 +36,7 @@ def parse_hunter_emails(payload: dict) -> list[dict]:
                 "email": e.get("value"),
                 "email_confidence": e.get("confidence"),
                 "email_verification_status": (e.get("verification") or {}).get("status"),
+                "phone": e.get("phone_number"),
                 "linkedin": e.get("linkedin"),
                 "twitter": e.get("twitter"),
                 "source": "hunter",

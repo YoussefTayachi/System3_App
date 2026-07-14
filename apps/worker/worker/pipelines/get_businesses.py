@@ -10,6 +10,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
 from worker.keys import get_api_key
+from worker.pipelines.discover import discover_companies, parse_discover_company
 from worker.queue import enqueue
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
@@ -66,6 +67,28 @@ def parse_place(p: dict) -> dict:
     }
 
 
+def run_corporate(search: dict, ws: str) -> None:
+    """Corporate-Modus: Hunter Discover statt Google Maps."""
+    api_key = get_api_key(ws, "hunter")
+    companies = discover_companies(search.get("filters") or {}, api_key)
+    existing = {
+        b["website"]
+        for b in sb().table("businesses").select("website").eq("workspace_id", ws).execute().data
+        if b.get("website")
+    }
+    rows = []
+    for c in companies:
+        row = parse_discover_company(c)
+        if not row["website"] or row["website"] in existing:
+            continue
+        rows.append(row | {"workspace_id": ws, "search_id": search["id"]})
+        existing.add(row["website"])
+        if len(rows) >= search["max_results"]:
+            break
+    if rows:
+        sb().table("businesses").insert(rows).execute()
+
+
 def run(job: dict) -> None:
     ws = job["workspace_id"]
     search_id = job["payload"]["search_id"]
@@ -74,6 +97,10 @@ def run(job: dict) -> None:
     search = sb().table("searches").select("*").eq("id", search_id).single().execute().data
     sb().table("searches").update({"status": "running"}).eq("id", search_id).execute()
     try:
+        if search.get("source") == "corporate":
+            run_corporate(search, ws)
+            _finish(search_id, ws, auto_enrich)
+            return
         api_key = get_api_key(ws, "google_maps")
         loc = geocode(search["location"], api_key)
         collected, token = 0, ""
@@ -93,23 +120,22 @@ def run(job: dict) -> None:
             token = data.get("nextPageToken") or ""
             if not token:
                 break
-        sb().table("searches").update({"status": "completed"}).eq("id", search_id).execute()
-
-        if auto_enrich:
-            for b in (
-                sb()
-                .table("businesses")
-                .select("id,website")
-                .eq("search_id", search_id)
-                .execute()
-                .data
-            ):
-                enqueue(ws, "find_decisionmaker", {"business_id": b["id"]})
-                if b.get("website"):
-                    enqueue(ws, "hunt_persons", {"business_id": b["id"]})
-                    enqueue(ws, "personalize", {"business_id": b["id"]})
+        _finish(search_id, ws, auto_enrich)
     except Exception as exc:
         sb().table("searches").update({"status": "failed", "error": str(exc)[:1000]}).eq(
             "id", search_id
         ).execute()
         raise
+
+
+def _finish(search_id: str, ws: str, auto_enrich: bool) -> None:
+    sb().table("searches").update({"status": "completed"}).eq("id", search_id).execute()
+    if not auto_enrich:
+        return
+    for b in (
+        sb().table("businesses").select("id,website").eq("search_id", search_id).execute().data
+    ):
+        enqueue(ws, "find_decisionmaker", {"business_id": b["id"]})
+        if b.get("website"):
+            enqueue(ws, "hunt_persons", {"business_id": b["id"]})
+            enqueue(ws, "personalize", {"business_id": b["id"]})

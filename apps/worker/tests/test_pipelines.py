@@ -127,3 +127,31 @@ def test_build_system_prompt():
     prompt = build_system_prompt(custom)
     assert custom in prompt
     assert DEFAULT_STYLE not in prompt
+
+
+def test_build_discover_body():
+    from worker.pipelines.discover import build_discover_body
+
+    body = build_discover_body(
+        {"country": "AT", "city": "Vienna", "industry": "Insurance",
+         "headcount": "11-50", "keywords": "makler, vorsorge"}
+    )
+    assert body["headquarters_location"] == {"include": [{"country": "AT", "city": "Vienna"}]}
+    assert body["industry"] == {"include": ["Insurance"]}
+    assert body["headcount"] == ["11-50"]
+    assert body["keywords"] == {"include": ["makler", "vorsorge"], "match": "any"}
+
+    minimal = build_discover_body({"country": "DE"})
+    assert "industry" not in minimal
+
+    import pytest
+    with pytest.raises(ValueError):
+        build_discover_body({})
+
+
+def test_parse_discover_company():
+    from worker.pipelines.discover import parse_discover_company
+
+    row = parse_discover_company({"domain": "kotax.com", "organization": "KOTAX"})
+    assert row == {"place_id": None, "name": "KOTAX", "website": "https://kotax.com"}
+    assert parse_discover_company({})["website"] is None
