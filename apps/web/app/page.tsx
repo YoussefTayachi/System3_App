@@ -85,10 +85,15 @@ export default async function Dashboard() {
           <p className="text-[13px] text-faint">Überblick über deine Lead-Pipeline</p>
         </div>
         {hasActive && (
-          <span className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-            {stats.jobs_active} Jobs aktiv
-          </span>
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+              {stats.jobs_active} Agenten arbeiten
+            </span>
+            <div className="h-1 w-36 overflow-hidden rounded-full bg-chip">
+              <div className="h-full w-1/3 animate-[slide_1.4s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
+            </div>
+          </div>
         )}
       </div>
 
@@ -104,6 +109,22 @@ export default async function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* ROI-Banner */}
+      {(stats.contacts_total ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-panel to-panel px-4 py-3 dark:border-indigo-500/25 dark:from-indigo-500/10">
+          <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+          </svg>
+          <p className="text-sm text-ink">
+            <span className="font-semibold">≈ {roi.hours} Stunden</span> manuelle Recherche gespart
+          </p>
+          <p className="text-sm text-soft">
+            · entspricht <span className="font-medium text-emerald-600 dark:text-emerald-400">~{roi.value} €</span> Personalkosten
+            — bei <span className="font-medium text-ink">${costs.usd.toFixed(2)}</span> API-Kosten
+          </p>
+        </div>
+      )}
 
       {/* Chart + Neueste Leads */}
       <div className="grid gap-5 lg:grid-cols-5">
