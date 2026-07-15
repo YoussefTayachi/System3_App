@@ -1,4 +1,5 @@
 import "./globals.css";
+import "@fontsource-variable/inter";
 import { createClient } from "@/lib/supabase/server";
 import Nav from "./nav";
 import LogoutButton from "./logout-button";
