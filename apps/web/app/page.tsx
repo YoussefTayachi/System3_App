@@ -35,6 +35,14 @@ function estimateCosts(s: Stats) {
   return { usd: google + openai, hunterCredits: s.jobs_hunter ?? 0 };
 }
 
+// ROI: manuelle Recherche ~8 Min/Kontakt, Personalisierung ~4 Min/Firma
+function estimateRoi(s: Stats) {
+  const minutes = (s.contacts_total ?? 0) * 8 + (s.personalized ?? 0) * 4;
+  const hours = minutes / 60;
+  const value = Math.round(hours * 45); // 45 €/h Personalkosten
+  return { hours: Math.round(hours * 10) / 10, value };
+}
+
 export default async function Dashboard() {
   const supabase = await createClient();
   const [statsRes, searchesRes, wsRes, recentRes] = await Promise.all([
@@ -56,6 +64,7 @@ export default async function Dashboard() {
   const searches = searchesRes.data ?? [];
   const recent = recentRes.data ?? [];
   const costs = estimateCosts(stats);
+  const roi = estimateRoi(stats);
   const hasActive = (stats.jobs_active ?? 0) > 0;
 
   const kpis: { label: string; value: number | string; sub?: string }[] = [

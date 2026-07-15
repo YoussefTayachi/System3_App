@@ -79,6 +79,11 @@ body {
 .fade-up { animation: fadeUp 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 
 @keyframes rise { from { transform: scaleY(0); opacity: 0.3; } }
+
+@keyframes slide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
 .bar-rise { transform-origin: bottom; animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 
 /* Dezentes Punktraster für Hero-Flächen (Login) */

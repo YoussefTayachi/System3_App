@@ -66,7 +66,7 @@ export default function SettingsPage() {
       body: JSON.stringify({ provider, key }),
     });
     if (res.ok) {
-      setStatus((s) => ({ ...s, [provider]: "Verschlüsselt gespeichert ✓" }));
+      setStatus((s) => ({ ...s, [provider]: "🔒 AES-128 verschlüsselt gespeichert" }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
       setValues((v) => ({ ...v, [provider]: "" }));
     } else {
@@ -129,7 +129,38 @@ export default function SettingsPage() {
                 />
                 <button onClick={() => save(p.id)} className={btnCls}>Speichern</button>
               </div>
-              {status[p.id] && <p className="mt-2 text-xs text-faint">{status[p.id]}</p>}
+              {status[p.id] && (
+                <p className={"mt-2 text-xs " + (status[p.id].includes("🔒") ? "fade-up font-medium text-emerald-600 dark:text-emerald-400" : "text-faint")}>
+                  {status[p.id]}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-edge bg-panel p-6">
+        <h2 className="font-medium text-ink">Kompatibel mit deinem Stack</h2>
+        <p className="mb-4 mt-1 text-sm text-faint">
+          Exportiere Leads mit einem Klick — die Spalten sind für den Direkt-Import vorbereitet.
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { name: "Instantly", note: "CSV-Import, Auto-Mapping" },
+            { name: "Smartlead", note: "CSV-Import" },
+            { name: "Lemlist", note: "CSV-Import" },
+            { name: "HubSpot", note: "CSV-Import" },
+            { name: "Pipedrive", note: "CSV-Import" },
+            { name: "Salesforce", note: "CSV-Import" },
+            { name: "Excel / Sheets", note: "Excel-CSV" },
+            { name: "Zapier", note: "geplant" },
+          ].map((t) => (
+            <div
+              key={t.name}
+              className="rounded-lg border border-edge bg-surface/60 px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-edge2"
+            >
+              <p className="text-sm font-medium text-ink">{t.name}</p>
+              <p className="text-[11px] text-faint">{t.note}</p>
             </div>
           ))}
         </div>
