@@ -98,7 +98,7 @@ export default async function Dashboard() {
       </div>
 
       {/* KPI-Leiste */}
-      <div className="grid grid-cols-3 divide-edge overflow-hidden rounded-xl border border-edge bg-panel shadow-sm md:grid-cols-6 md:divide-x">
+      <div className="grid grid-cols-3 divide-edge/60 overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm md:grid-cols-6 md:divide-x">
         {kpis.map((k) => (
           <div key={k.label} className="px-4 py-3.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{k.label}</p>
@@ -112,7 +112,7 @@ export default async function Dashboard() {
 
       {/* ROI-Banner */}
       {(stats.contacts_total ?? 0) > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-panel to-panel px-4 py-3 dark:border-indigo-500/25 dark:from-indigo-500/10">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-panel to-panel px-4 py-3 dark:border-indigo-500/25 dark:from-indigo-500/10">
           <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
           </svg>
@@ -128,7 +128,7 @@ export default async function Dashboard() {
 
       {/* Chart + Neueste Leads */}
       <div className="grid gap-5 lg:grid-cols-5">
-        <div className="rounded-xl border border-edge bg-panel p-5 shadow-sm lg:col-span-3">
+        <div className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium text-ink">Neue Leads — letzte 14 Tage</h2>
             <span className="text-xs text-mute">
@@ -137,12 +137,12 @@ export default async function Dashboard() {
           </div>
           <ActivityChart data={stats.activity ?? []} />
         </div>
-        <div className="overflow-hidden rounded-xl border border-edge bg-panel shadow-sm lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-edge px-4 py-3">
+        <div className="overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-edge/60 px-4 py-3">
             <h2 className="text-sm font-medium text-ink">Neueste Leads</h2>
             <Link href="/leads" className="text-xs text-faint hover:text-ink">Alle →</Link>
           </div>
-          <div className="divide-y divide-edge">
+          <div className="divide-y divide-edge/60">
             {recent.map((c) => (
               <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-chip text-[11px] font-semibold text-soft">
@@ -168,7 +168,7 @@ export default async function Dashboard() {
       </div>
 
       {/* Neue Suche */}
-      <section className="rounded-xl border border-edge bg-panel p-5 shadow-sm">
+      <section className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm">
         <h2 className="mb-1 text-sm font-medium text-ink">Neue Suche</h2>
         <p className="mb-4 text-[13px] text-faint">
           Nische + Ort eingeben — Firmen, Entscheider, E-Mails und Personalisierung laufen automatisch.
@@ -177,8 +177,8 @@ export default async function Dashboard() {
       </section>
 
       {/* Letzte Suchen */}
-      <section className="overflow-hidden rounded-xl border border-edge bg-panel shadow-sm">
-        <div className="flex items-center justify-between border-b border-edge px-5 py-3">
+      <section className="overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm">
+        <div className="flex items-center justify-between border-b border-edge/60 px-5 py-3">
           <h2 className="text-sm font-medium text-ink">Letzte Suchen</h2>
           <Link href="/searches" className="text-xs text-faint hover:text-ink">
             Alle anzeigen →
@@ -186,7 +186,7 @@ export default async function Dashboard() {
         </div>
         <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-edge text-left text-xs text-mute">
+            <tr className="border-b border-edge/60 text-left text-xs text-mute">
               <th className="px-5 py-2 font-medium">Liste</th>
               <th className="px-5 py-2 font-medium">Quelle</th>
               <th className="px-5 py-2 font-medium">Ort</th>
@@ -197,14 +197,14 @@ export default async function Dashboard() {
           </thead>
           <tbody>
             {searches.map((s) => (
-              <tr key={s.id} className="border-b border-edge transition-colors last:border-0 hover:bg-wash">
+              <tr key={s.id} className="border-b border-edge/60 transition-colors last:border-0 hover:bg-wash">
                 <td className="px-5 py-2.5 font-medium text-ink">
                   <Link href={"/searches/" + s.id} className="hover:underline underline-offset-4">
                     {s.name ?? s.query}
                   </Link>
                 </td>
                 <td className="px-5 py-2.5">
-                  <span className="rounded-md border border-edge bg-chip px-1.5 py-0.5 text-[11px] text-soft">
+                  <span className="rounded-md border border-edge/60 bg-chip px-1.5 py-0.5 text-[11px] text-soft">
                     {s.source === "corporate" ? "Corporate" : "Maps"}
                   </span>
                 </td>

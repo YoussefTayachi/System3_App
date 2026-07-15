@@ -7,11 +7,11 @@ export default function Loading() {
       </div>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className={"skeleton h-28 rounded-xl " + (i === 6 ? "col-span-2" : "")} />
+          <div key={i} className={"skeleton h-28 rounded-lg " + (i === 6 ? "col-span-2" : "")} />
         ))}
       </div>
-      <div className="skeleton h-40 rounded-xl" />
-      <div className="skeleton h-64 rounded-xl" />
+      <div className="skeleton h-40 rounded-lg" />
+      <div className="skeleton h-64 rounded-lg" />
     </div>
   );
 }

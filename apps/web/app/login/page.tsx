@@ -37,7 +37,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-edge bg-panel p-6 shadow-sm">
+        <div className="rounded-lg border border-edge/60 bg-panel p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-medium text-ink">Anmelden</h2>
           <form onSubmit={onSubmit} className="space-y-3">
             <input

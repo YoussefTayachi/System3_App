@@ -16,7 +16,7 @@ export function TrashButton({ searchId }: { searchId: string }) {
           .eq("id", searchId);
         router.refresh();
       }}
-      className="rounded-lg border border-edge px-2.5 py-1.5 text-xs text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
+      className="rounded-lg border border-edge/60 px-2.5 py-1.5 text-xs text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
     >
       Löschen
     </button>

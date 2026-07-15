@@ -62,7 +62,7 @@ export default async function SearchesPage() {
             <Link
               key={s.id}
               href={"/searches/" + s.id}
-              className="fade-up block rounded-xl border border-edge bg-panel p-5 transition-all duration-300 hover:border-edge2 hover:shadow-sm"
+              className="fade-up block rounded-lg border border-edge/60 bg-panel p-5 transition-all duration-300 hover:border-edge2 hover:shadow-sm"
               style={{ animationDelay: idx * 50 + "ms" }}
             >
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -119,18 +119,18 @@ export default async function SearchesPage() {
           );
         })}
         {searches.length === 0 && (
-          <div className="rounded-xl border border-edge bg-panel p-10 text-center text-faint">
+          <div className="rounded-lg border border-edge/60 bg-panel p-10 text-center text-faint">
             Noch keine Suchen — starte deine erste im Dashboard.
           </div>
         )}
       </div>
 
       {trash.length > 0 && (
-        <details className="rounded-xl border border-edge bg-panel">
+        <details className="rounded-lg border border-edge/60 bg-panel">
           <summary className="cursor-pointer px-5 py-3 text-sm text-faint hover:text-soft">
             Papierkorb ({trash.length})
           </summary>
-          <div className="divide-y divide-edge border-t border-edge">
+          <div className="divide-y divide-edge/60 border-t border-edge/60">
             {trash.map((t) => (
               <div key={t.id} className="flex items-center gap-3 px-5 py-3">
                 <span className="min-w-0 flex-1 truncate text-sm text-soft">

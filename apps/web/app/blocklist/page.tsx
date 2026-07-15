@@ -96,7 +96,7 @@ export default function BlocklistPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-edge bg-panel p-6">
+      <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <h2 className="mb-1 font-medium text-ink">Einträge hinzufügen</h2>
         <p className="mb-3 text-xs text-faint">
           E-Mails blockieren die Person, Domains (z.B. <span className="text-soft">kunde-gmbh.de</span>) die
@@ -125,11 +125,11 @@ export default function BlocklistPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-edge bg-panel">
-        <h2 className="border-b border-edge px-5 py-3 text-sm font-medium text-ink">
+      <div className="overflow-hidden rounded-lg border border-edge/60 bg-panel">
+        <h2 className="border-b border-edge/60 px-5 py-3 text-sm font-medium text-ink">
           {rows.length} Einträge
         </h2>
-        <div className="max-h-96 divide-y divide-edge overflow-y-auto">
+        <div className="max-h-96 divide-y divide-edge/60 overflow-y-auto">
           {rows.map((r) => (
             <div key={r.id} className="flex items-center gap-3 px-5 py-2">
               <span className="min-w-0 flex-1 truncate font-mono text-sm text-soft">

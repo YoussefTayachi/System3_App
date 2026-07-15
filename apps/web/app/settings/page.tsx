@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { IconLock } from "../icons";
 
 const PROVIDERS = [
   { id: "google_maps", label: "Google Maps", hint: "Geocoding API + Places API (New) aktivieren" },
@@ -66,7 +67,7 @@ export default function SettingsPage() {
       body: JSON.stringify({ provider, key }),
     });
     if (res.ok) {
-      setStatus((s) => ({ ...s, [provider]: "🔒 AES-128 verschlüsselt gespeichert" }));
+      setStatus((s) => ({ ...s, [provider]: "AES-128 (Fernet) verschlüsselt gespeichert" }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
       setValues((v) => ({ ...v, [provider]: "" }));
     } else {
@@ -82,7 +83,7 @@ export default function SettingsPage() {
         <p className="text-sm text-faint">API-Keys und Personalisierungs-Stil</p>
       </div>
 
-      <div className="rounded-xl border border-edge bg-panel p-6">
+      <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <h2 className="font-medium text-ink">Personalisierungs-Stil</h2>
         <p className="mb-4 mt-1 text-sm text-faint">
           Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
@@ -102,13 +103,16 @@ export default function SettingsPage() {
       </div>
 
       <div>
-        <h2 className="mb-1 font-medium text-ink">API-Keys</h2>
+        <h2 className="mb-1 flex items-center gap-1.5 font-medium text-ink">
+          <IconLock className="h-4 w-4 text-mute" filled />
+          API-Keys
+        </h2>
         <p className="mb-4 text-sm text-faint">
-          Deine Keys werden serverseitig verschlüsselt (AES) gespeichert und nie im Klartext angezeigt.
+          Deine Keys werden serverseitig verschlüsselt (AES-128, Fernet) gespeichert und nie im Klartext angezeigt.
         </p>
         <div className="space-y-4">
           {PROVIDERS.map((p) => (
-            <div key={p.id} className="rounded-xl border border-edge bg-panel p-6">
+            <div key={p.id} className="rounded-lg border border-edge/60 bg-panel p-6">
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-medium text-ink">{p.label}</h3>
                 {saved.includes(p.id) && (
@@ -130,8 +134,26 @@ export default function SettingsPage() {
                 <button onClick={() => save(p.id)} className={btnCls}>Speichern</button>
               </div>
               {status[p.id] && (
-                <p className={"mt-2 text-xs " + (status[p.id].includes("🔒") ? "fade-up font-medium text-emerald-600 dark:text-emerald-400" : "text-faint")}>
-                  {status[p.id]}
+                <p
+                  className={
+                    "mt-2 flex items-center gap-1.5 text-xs " +
+                    (status[p.id].includes("verschlüsselt")
+                      ? "lock-pop font-medium text-emerald-600 dark:text-emerald-400"
+                      : "text-faint")
+                  }
+                >
+                  <IconLock
+                    className={
+                      "h-3.5 w-3.5 " +
+                      (status[p.id] === "..."
+                        ? "lock-spin text-mute"
+                        : status[p.id].includes("verschlüsselt")
+                        ? "text-emerald-500"
+                        : "text-mute")
+                    }
+                    filled={status[p.id].includes("verschlüsselt")}
+                  />
+                  {status[p.id] === "..." ? "Wird verschlüsselt…" : status[p.id]}
                 </p>
               )}
             </div>
@@ -139,7 +161,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-edge bg-panel p-6">
+      <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <h2 className="font-medium text-ink">Kompatibel mit deinem Stack</h2>
         <p className="mb-4 mt-1 text-sm text-faint">
           Exportiere Leads mit einem Klick — die Spalten sind für den Direkt-Import vorbereitet.
@@ -157,7 +179,7 @@ export default function SettingsPage() {
           ].map((t) => (
             <div
               key={t.name}
-              className="rounded-lg border border-edge bg-surface/60 px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-edge2"
+              className="rounded-lg border border-edge/60 bg-surface/60 px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-edge2"
             >
               <p className="text-sm font-medium text-ink">{t.name}</p>
               <p className="text-[11px] text-faint">{t.note}</p>

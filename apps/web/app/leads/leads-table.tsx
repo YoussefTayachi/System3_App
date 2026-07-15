@@ -383,8 +383,8 @@ export default function LeadsTable({
 
   return (
     <>
-      <section className="overflow-hidden rounded-xl border border-edge bg-panel">
-        <div className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-3">
+      <section className="overflow-hidden rounded-lg border border-edge/60 bg-panel">
+        <div className="flex flex-wrap items-center gap-3 border-b border-edge/60 px-4 py-3">
           <div className="relative min-w-52 flex-1">
             <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
             <input
@@ -423,7 +423,7 @@ export default function LeadsTable({
               Spalten
             </button>
             {colsOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-edge bg-panel p-2 shadow-2xl">
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-edge/60 bg-panel p-2 shadow-2xl">
                 {ALL_COLUMNS.map((c) => (
                   <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-soft hover:bg-wash">
                     <input
@@ -459,7 +459,7 @@ export default function LeadsTable({
         </div>
 
         {activeChips.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-edge bg-wash/50 px-4 py-2">
+          <div className="flex flex-wrap items-center gap-2 border-b border-edge/60 bg-wash/50 px-4 py-2">
             {activeChips.map((chip) => (
               <button
                 key={chip.label}
@@ -473,13 +473,13 @@ export default function LeadsTable({
           </div>
         )}
 
-        <div className="divide-y divide-edge">
+        <div className="divide-y divide-edge/60">
           {filtered.map((g) => {
             const isOpen = forceOpen || open.has(g.key);
             const withEmail = g.contacts.filter((c) => c.email).length;
             return (
               <div key={g.key}>
-                <div className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-wash">
+                <div className="flex w-full items-center gap-3 px-4 py-3 transition-all duration-150 hover:z-10 hover:bg-wash hover:shadow-[0_1px_0_0_var(--c-edge2)]">
                   <input
                     type="checkbox"
                     checked={selected.has(g.key)}
@@ -517,7 +517,7 @@ export default function LeadsTable({
                 </div>
 
                 {isOpen && (
-                  <div className="border-t border-edge bg-surface/60 px-4 pb-4 pt-3">
+                  <div className="border-t border-edge/60 bg-surface/60 px-4 pb-4 pt-3">
                     {g.personalization && (
                       <p className="mb-3 max-w-3xl border-l-2 border-indigo-500/40 pl-3 text-xs italic leading-relaxed text-soft">
                         {g.personalization}
@@ -535,7 +535,7 @@ export default function LeadsTable({
                       </thead>
                       <tbody>
                         {g.contacts.map((c) => (
-                          <tr key={c.id} className="border-t border-edge/60">
+                          <tr key={c.id} className="border-t border-edge/60/60">
                             <td className="py-2 pr-4 text-ink">
                               {c.linkedin ? (
                                 <a href={c.linkedin} target="_blank"
@@ -593,7 +593,7 @@ export default function LeadsTable({
       {/* Bulk-Action-Leiste */}
       {selected.size > 0 && (
         <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 md:left-[calc(50%+7.5rem)]">
-          <div className="fade-up flex items-center gap-3 rounded-xl border border-edge bg-panel px-4 py-3 shadow-2xl">
+          <div className="fade-up flex items-center gap-3 rounded-lg border border-edge/60 bg-panel px-4 py-3 shadow-2xl">
             <span className="text-sm text-ink">
               <span className="font-semibold">{selectedGroups.length}</span> Firmen ·{" "}
               {selectedContacts} Kontakte
@@ -633,7 +633,7 @@ export default function LeadsTable({
             className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setDrawer(null)}
           />
-          <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-edge bg-panel p-6 shadow-2xl [animation:fadeUp_.25s_ease]">
+          <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-edge/60 bg-panel p-6 shadow-2xl [animation:fadeUp_.25s_ease]">
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-ink">{drawer.name}</h2>
@@ -646,14 +646,14 @@ export default function LeadsTable({
               </div>
               <button
                 onClick={() => setDrawer(null)}
-                className="rounded-lg border border-edge px-2.5 py-1 text-sm text-faint transition-colors hover:border-edge2 hover:text-ink"
+                className="rounded-lg border border-edge/60 px-2.5 py-1 text-sm text-faint transition-colors hover:border-edge2 hover:text-ink"
               >
                 ✕
               </button>
             </div>
 
             {(drawer.address || drawer.phone_national) && (
-              <div className="mb-5 space-y-1 rounded-lg border border-edge bg-surface/60 p-3 text-xs text-soft">
+              <div className="mb-5 space-y-1 rounded-lg border border-edge/60 bg-surface/60 p-3 text-xs text-soft">
                 {drawer.address && <p>{drawer.address}</p>}
                 {drawer.phone_national && <p>{drawer.phone_national}</p>}
               </div>
@@ -697,7 +697,7 @@ export default function LeadsTable({
             </p>
             <div className="space-y-2">
               {drawer.contacts.map((c) => (
-                <div key={c.id} className="rounded-lg border border-edge bg-surface/60 p-3">
+                <div key={c.id} className="rounded-lg border border-edge/60 bg-surface/60 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-ink">{c.full_name ?? "—"}</p>
                     <span className="flex gap-1">

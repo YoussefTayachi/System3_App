@@ -67,3 +67,13 @@ export function IconShield({ className = "h-4 w-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function IconLock({ className = "h-4 w-4", filled = false }: { className?: string; filled?: boolean }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2.2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" />
+      {filled && <circle cx="12" cy="16" r="1.4" fill="var(--c-panel)" stroke="none" />}
+    </svg>
+  );
+}

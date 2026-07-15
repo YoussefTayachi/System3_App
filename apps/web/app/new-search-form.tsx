@@ -88,7 +88,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="flex gap-1 rounded-xl border border-edge bg-panel p-1 w-fit">
+      <div className="flex gap-1 rounded-lg border border-edge/60 bg-panel p-1 w-fit">
         <button type="button" className={tabCls(mode === "maps")} onClick={() => setMode("maps")}>
           Lokal (Google Maps)
         </button>

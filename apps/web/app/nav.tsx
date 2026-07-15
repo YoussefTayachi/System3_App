@@ -22,9 +22,9 @@ export default function Nav() {
             key={href}
             href={href}
             className={
-              "relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-all duration-150 " +
+              "relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-all duration-200 " +
               (active
-                ? "border border-edge bg-panel font-medium text-ink shadow-sm"
+                ? "border border-edge/60 bg-panel font-medium text-ink shadow-sm"
                 : "border border-transparent text-soft hover:bg-chip hover:text-ink")
             }
           >
