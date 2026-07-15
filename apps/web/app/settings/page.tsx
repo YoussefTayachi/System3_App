@@ -82,7 +82,7 @@ export default function SettingsPage() {
         <p className="text-sm text-faint">API-Keys und Personalisierungs-Stil</p>
       </div>
 
-      <div className="rounded-2xl border border-edge bg-panel p-6">
+      <div className="rounded-xl border border-edge bg-panel p-6">
         <h2 className="font-medium text-ink">Personalisierungs-Stil</h2>
         <p className="mb-4 mt-1 text-sm text-faint">
           Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
@@ -108,7 +108,7 @@ export default function SettingsPage() {
         </p>
         <div className="space-y-4">
           {PROVIDERS.map((p) => (
-            <div key={p.id} className="rounded-2xl border border-edge bg-panel p-6">
+            <div key={p.id} className="rounded-xl border border-edge bg-panel p-6">
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-medium text-ink">{p.label}</h3>
                 {saved.includes(p.id) && (

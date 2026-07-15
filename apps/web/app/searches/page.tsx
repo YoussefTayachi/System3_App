@@ -47,7 +47,7 @@ export default async function SearchesPage() {
         </div>
         <Link
           href="/"
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98]"
+          className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
         >
           + Neue Suche
         </Link>
@@ -62,7 +62,7 @@ export default async function SearchesPage() {
             <Link
               key={s.id}
               href={"/searches/" + s.id}
-              className="fade-up block rounded-2xl border border-edge bg-panel p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-edge2 hover:bg-panel2 hover:shadow-xl hover:shadow-indigo-500/5"
+              className="fade-up block rounded-xl border border-edge bg-panel p-5 transition-all duration-300 hover:border-edge2 hover:shadow-sm"
               style={{ animationDelay: idx * 50 + "ms" }}
             >
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -119,14 +119,14 @@ export default async function SearchesPage() {
           );
         })}
         {searches.length === 0 && (
-          <div className="rounded-2xl border border-edge bg-panel p-10 text-center text-faint">
+          <div className="rounded-xl border border-edge bg-panel p-10 text-center text-faint">
             Noch keine Suchen — starte deine erste im Dashboard.
           </div>
         )}
       </div>
 
       {trash.length > 0 && (
-        <details className="rounded-2xl border border-edge bg-panel">
+        <details className="rounded-xl border border-edge bg-panel">
           <summary className="cursor-pointer px-5 py-3 text-sm text-faint hover:text-soft">
             Papierkorb ({trash.length})
           </summary>

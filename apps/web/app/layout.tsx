@@ -16,7 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   } = await supabase.auth.getUser();
 
   const themeScript =
-    "try{var t=localStorage.getItem('theme');if(t?t==='dark':true)document.documentElement.classList.add('dark')}catch(e){}";
+    "try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}";
 
   if (!user) {
     return (
@@ -36,13 +36,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <div className="flex min-h-screen">
-          <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-edge bg-panel px-4 py-6 md:flex">
-            <div className="mb-8 flex items-center gap-2.5 px-2">
-              <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/40">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 blur-md opacity-40" />
-                <span className="relative">3</span>
+          <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-edge bg-surface px-3 py-5 md:flex">
+            <div className="mb-6 flex items-center gap-2 px-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
+                3
               </div>
-              <span className="text-[15px] font-semibold tracking-tight text-ink">
+              <span className="text-sm font-semibold tracking-tight text-ink">
                 System3
               </span>
             </div>
@@ -59,11 +58,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </aside>
-          <div className="min-w-0 flex-1 md:pl-60">
+          <div className="min-w-0 flex-1 md:pl-56">
             <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge bg-surface/80 px-6 backdrop-blur md:hidden">
               <span className="font-semibold">System3</span>
             </header>
-            <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+            <main className="mx-auto max-w-6xl px-8 py-7">{children}</main>
           </div>
         </div>
       </body>

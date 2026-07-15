@@ -230,7 +230,7 @@ export default function LeadsTable({
   const forceOpen = q.length > 0;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-edge bg-panel">
+    <section className="overflow-hidden rounded-xl border border-edge bg-panel">
       <div className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-3">
         <div className="relative min-w-52 flex-1">
           <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
@@ -269,7 +269,7 @@ export default function LeadsTable({
           onClick={() => download(toInstantlyCsv(filtered), "-instantly.csv")}
           disabled={shownContacts === 0}
           title="Spalten exakt für Instantlys CSV-Import benannt — Variablen wie {{personalization}} sind direkt im Template nutzbar"
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
+          className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-40"
         >
           Für Instantly exportieren
         </button>

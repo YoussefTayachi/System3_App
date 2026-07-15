@@ -191,7 +191,7 @@ function SubmitButton({ loading }: { loading: boolean }) {
   return (
     <button
       disabled={loading}
-      className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+      className="rounded-lg bg-ink px-5 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-50"
     >
       {loading ? "Wird gestartet..." : "Suche starten"}
     </button>

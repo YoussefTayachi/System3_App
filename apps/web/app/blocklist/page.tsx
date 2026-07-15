@@ -96,7 +96,7 @@ export default function BlocklistPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-edge bg-panel p-6">
+      <div className="rounded-xl border border-edge bg-panel p-6">
         <h2 className="mb-1 font-medium text-ink">Einträge hinzufügen</h2>
         <p className="mb-3 text-xs text-faint">
           E-Mails blockieren die Person, Domains (z.B. <span className="text-soft">kunde-gmbh.de</span>) die
@@ -113,7 +113,7 @@ export default function BlocklistPage() {
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => addEntries(input)}
-            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98]"
+            className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
           >
             Blockieren
           </button>
@@ -125,7 +125,7 @@ export default function BlocklistPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
+      <div className="overflow-hidden rounded-xl border border-edge bg-panel">
         <h2 className="border-b border-edge px-5 py-3 text-sm font-medium text-ink">
           {rows.length} Einträge
         </h2>
