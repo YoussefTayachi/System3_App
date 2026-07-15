@@ -12,8 +12,8 @@ const PROMPT_PLACEHOLDER =
   'z.B.: Menschlich und locker, wie von Mensch zu Mensch. Beispiel: "Hey, hab gesehen du arbeitest mit Tieren - ich hab 10 Jahre in dem Bereich gearbeitet und kenn das genau, dachte ich schreib dir mal."';
 
 const inputCls =
-  "rounded-lg border border-zinc-700/80 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 " +
-  "placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500";
+  "rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink " +
+  "placeholder-mute outline-none transition-colors focus:border-indigo-500";
 
 const btnCls =
   "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg " +
@@ -78,13 +78,13 @@ export default function SettingsPage() {
   return (
     <div className="fade-up max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Einstellungen</h1>
-        <p className="text-sm text-zinc-500">API-Keys und Personalisierungs-Stil</p>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Einstellungen</h1>
+        <p className="text-sm text-faint">API-Keys und Personalisierungs-Stil</p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
-        <h2 className="font-medium text-zinc-100">Personalisierungs-Stil</h2>
-        <p className="mb-4 mt-1 text-sm text-zinc-500">
+      <div className="rounded-2xl border border-edge bg-panel p-6">
+        <h2 className="font-medium text-ink">Personalisierungs-Stil</h2>
+        <p className="mb-4 mt-1 text-sm text-faint">
           Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
           Leer lassen für den Standard-Stil (1 sachlicher Satz).
         </p>
@@ -97,28 +97,28 @@ export default function SettingsPage() {
         />
         <div className="mt-3 flex items-center gap-3">
           <button onClick={savePrompt} className={btnCls}>Speichern</button>
-          {promptStatus && <span className="text-xs text-zinc-500">{promptStatus}</span>}
+          {promptStatus && <span className="text-xs text-faint">{promptStatus}</span>}
         </div>
       </div>
 
       <div>
-        <h2 className="mb-1 font-medium text-zinc-100">API-Keys</h2>
-        <p className="mb-4 text-sm text-zinc-500">
+        <h2 className="mb-1 font-medium text-ink">API-Keys</h2>
+        <p className="mb-4 text-sm text-faint">
           Deine Keys werden serverseitig verschlüsselt (AES) gespeichert und nie im Klartext angezeigt.
         </p>
         <div className="space-y-4">
           {PROVIDERS.map((p) => (
-            <div key={p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+            <div key={p.id} className="rounded-2xl border border-edge bg-panel p-6">
               <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-medium text-zinc-100">{p.label}</h3>
+                <h3 className="font-medium text-ink">{p.label}</h3>
                 {saved.includes(p.id) && (
-                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-300">
+                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     hinterlegt
                   </span>
                 )}
               </div>
-              <p className="mb-3 text-xs text-zinc-500">{p.hint}</p>
+              <p className="mb-3 text-xs text-faint">{p.hint}</p>
               <div className="flex gap-3">
                 <input
                   type="password"
@@ -129,7 +129,7 @@ export default function SettingsPage() {
                 />
                 <button onClick={() => save(p.id)} className={btnCls}>Speichern</button>
               </div>
-              {status[p.id] && <p className="mt-2 text-xs text-zinc-500">{status[p.id]}</p>}
+              {status[p.id] && <p className="mt-2 text-xs text-faint">{status[p.id]}</p>}
             </div>
           ))}
         </div>

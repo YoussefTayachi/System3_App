@@ -1,54 +1,117 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== Semantische Farb-Tokens (Light default, .dark überschreibt) ===== */
 :root {
-  --bg: #09090b;
-  --panel: #101013;
-  --border: #26262b;
-  --accent: #6366f1;
+  --c-surface: #f6f6f7;
+  --c-panel: #ffffff;
+  --c-panel2: #fafafa;
+  --c-field: #ffffff;
+  --c-chip: #f0f0f2;
+  --c-wash: #f4f4f5;
+  --c-edge: #e4e4e7;
+  --c-edge2: #d4d4d8;
+  --c-edge3: #a1a1aa;
+  --c-ink: #18181b;
+  --c-soft: #52525b;
+  --c-faint: #71717a;
+  --c-mute: #a1a1aa;
+  --aurora: 0.07;
+  color-scheme: light;
 }
 
-html {
+.dark {
+  --c-surface: #09090b;
+  --c-panel: #101013;
+  --c-panel2: #17171b;
+  --c-field: #101014;
+  --c-chip: #202025;
+  --c-wash: #1a1a1f;
+  --c-edge: #26262b;
+  --c-edge2: #34343b;
+  --c-edge3: #52525b;
+  --c-ink: #f4f4f5;
+  --c-soft: #a1a1aa;
+  --c-faint: #71717a;
+  --c-mute: #52525b;
+  --aurora: 0.14;
   color-scheme: dark;
 }
 
+@theme inline {
+  --color-surface: var(--c-surface);
+  --color-panel: var(--c-panel);
+  --color-panel2: var(--c-panel2);
+  --color-field: var(--c-field);
+  --color-chip: var(--c-chip);
+  --color-wash: var(--c-wash);
+  --color-edge: var(--c-edge);
+  --color-edge2: var(--c-edge2);
+  --color-edge3: var(--c-edge3);
+  --color-ink: var(--c-ink);
+  --color-soft: var(--c-soft);
+  --color-faint: var(--c-faint);
+  --color-mute: var(--c-mute);
+}
+
 body {
-  background: var(--bg);
-  color: #e4e4e7;
+  background: var(--c-surface);
+  color: var(--c-ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(700px 450px at 88% -12%, rgb(99 102 241 / var(--aurora)), transparent 70%),
+    radial-gradient(600px 400px at -8% 112%, rgb(139 92 246 / calc(var(--aurora) * 0.8)), transparent 70%);
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.3);
 }
 
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background: #2a2a30;
-  border-radius: 8px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--c-edge2); border-radius: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
 
+/* ===== Animationen ===== */
 @keyframes shimmer {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
+  0% { opacity: 0.55; } 50% { opacity: 1; } 100% { opacity: 0.55; }
 }
 .skeleton {
   animation: shimmer 1.6s ease-in-out infinite;
-  background: #1c1c21;
+  background: var(--c-chip);
   border-radius: 8px;
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.fade-up {
-  animation: fadeUp 0.35s ease both;
+.fade-up { animation: fadeUp 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes rise { from { transform: scaleY(0); opacity: 0.3; } }
+.bar-rise { transform-origin: bottom; animation: rise 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes floatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, 20px) scale(1.08); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, -15px) scale(1.05); }
+}
+.float-a { animation: floatA 14s ease-in-out infinite; }
+.float-b { animation: floatB 18s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .bar-rise, .float-a, .float-b { animation: none; }
 }

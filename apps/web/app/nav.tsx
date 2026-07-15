@@ -22,13 +22,16 @@ export default function Nav() {
             key={href}
             href={href}
             className={
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors " +
+              "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 " +
               (active
-                ? "bg-indigo-500/10 font-medium text-indigo-300"
-                : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100")
+                ? "bg-indigo-500/10 font-medium text-indigo-600 dark:text-indigo-300"
+                : "text-soft hover:bg-chip hover:text-ink")
             }
           >
-            <Icon className={"h-4 w-4 " + (active ? "text-indigo-400" : "text-zinc-500")} />
+            {active && (
+              <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-gradient-to-b from-indigo-400 to-violet-500" />
+            )}
+            <Icon className={"h-4 w-4 " + (active ? "text-indigo-600 dark:text-indigo-400" : "text-faint")} />
             {label}
           </Link>
         );

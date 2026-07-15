@@ -27,8 +27,8 @@ export default async function LeadsPage() {
   return (
     <div className="fade-up space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Alle Leads</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Alle Leads</h1>
+        <p className="text-sm text-faint">
           Gesamtbestand über alle Suchen — für einzelne Listen siehe „Suchen".
         </p>
       </div>

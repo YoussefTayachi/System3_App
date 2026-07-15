@@ -89,17 +89,17 @@ export default function BlocklistPage() {
   return (
     <div className="fade-up max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Blockliste</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Blockliste</h1>
+        <p className="text-sm text-faint">
           Bestandskunden & bereits kontaktierte Leads — werden nie angezeigt, nie exportiert und
           bei neuen Suchen gar nicht erst recherchiert.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
-        <h2 className="mb-1 font-medium text-zinc-100">Einträge hinzufügen</h2>
-        <p className="mb-3 text-xs text-zinc-500">
-          E-Mails blockieren die Person, Domains (z.B. <span className="text-zinc-300">kunde-gmbh.de</span>) die
+      <div className="rounded-2xl border border-edge bg-panel p-6">
+        <h2 className="mb-1 font-medium text-ink">Einträge hinzufügen</h2>
+        <p className="mb-3 text-xs text-faint">
+          E-Mails blockieren die Person, Domains (z.B. <span className="text-soft">kunde-gmbh.de</span>) die
           ganze Firma. Einfach einfügen — eine pro Zeile oder mit Komma getrennt. CSV-Upload nimmt
           automatisch alle enthaltenen E-Mail-Adressen.
         </p>
@@ -108,46 +108,46 @@ export default function BlocklistPage() {
           onChange={(e) => setInput(e.target.value)}
           rows={5}
           placeholder={"max@bestandskunde.de\nkunde-gmbh.at\ninfo@schon-kontaktiert.de"}
-          className="w-full rounded-lg border border-zinc-700/80 bg-zinc-900 px-3 py-2 font-mono text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-indigo-500"
+          className="w-full rounded-lg border border-edge2 bg-field px-3 py-2 font-mono text-sm text-ink placeholder-mute outline-none focus:border-indigo-500"
         />
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => addEntries(input)}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500"
+            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98]"
           >
             Blockieren
           </button>
-          <label className="cursor-pointer rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white">
+          <label className="cursor-pointer rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors hover:border-edge3 hover:text-ink">
             CSV hochladen
             <input type="file" accept=".csv,.txt" onChange={onFile} className="hidden" />
           </label>
-          {status && <span className="text-xs text-zinc-500">{status}</span>}
+          {status && <span className="text-xs text-faint">{status}</span>}
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40">
-        <h2 className="border-b border-zinc-800 px-5 py-3 text-sm font-medium text-zinc-100">
+      <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
+        <h2 className="border-b border-edge px-5 py-3 text-sm font-medium text-ink">
           {rows.length} Einträge
         </h2>
-        <div className="max-h-96 divide-y divide-zinc-800/60 overflow-y-auto">
+        <div className="max-h-96 divide-y divide-edge overflow-y-auto">
           {rows.map((r) => (
             <div key={r.id} className="flex items-center gap-3 px-5 py-2">
-              <span className="min-w-0 flex-1 truncate font-mono text-sm text-zinc-300">
+              <span className="min-w-0 flex-1 truncate font-mono text-sm text-soft">
                 {r.email ?? r.domain}
               </span>
-              <span className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-500">
+              <span className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-faint">
                 {r.email ? "E-Mail" : "Domain"}
               </span>
               <button
                 onClick={() => remove(r.id)}
-                className="text-xs text-zinc-600 transition-colors hover:text-red-400"
+                className="text-xs text-mute transition-colors hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
               >
                 Entfernen
               </button>
             </div>
           ))}
           {rows.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-zinc-500">Noch keine Einträge.</p>
+            <p className="px-5 py-8 text-center text-sm text-faint">Noch keine Einträge.</p>
           )}
         </div>
       </div>

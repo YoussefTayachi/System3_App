@@ -230,22 +230,22 @@ export default function LeadsTable({
   const forceOpen = q.length > 0;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40">
-      <div className="flex flex-wrap items-center gap-3 border-b border-zinc-800 px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-edge bg-panel">
+      <div className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-3">
         <div className="relative min-w-52 flex-1">
-          <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+          <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Filtern nach Firma, Name, E-Mail..."
-            className="w-full rounded-lg border border-zinc-700/80 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500"
+            className="w-full rounded-lg border border-edge2 bg-field py-2 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-indigo-500"
           />
         </div>
         {searches && searches.length > 0 && (
           <select
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="rounded-lg border border-zinc-700/80 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-indigo-500"
+            className="rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-indigo-500"
           >
             <option value="">Alle Suchen</option>
             {searches.map((s) => (
@@ -253,7 +253,7 @@ export default function LeadsTable({
             ))}
           </select>
         )}
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-400">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-soft">
           <input
             type="checkbox"
             checked={onlyEmail}
@@ -262,27 +262,27 @@ export default function LeadsTable({
           />
           Nur mit E-Mail
         </label>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-faint">
           {filtered.length} Firmen · {shownContacts} von {totalContacts} Kontakten
         </span>
         <button
           onClick={() => download(toInstantlyCsv(filtered), "-instantly.csv")}
           disabled={shownContacts === 0}
           title="Spalten exakt für Instantlys CSV-Import benannt — Variablen wie {{personalization}} sind direkt im Template nutzbar"
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-40"
+          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
         >
           Für Instantly exportieren
         </button>
         <button
           onClick={() => download(toCsv(filtered), ".csv")}
           disabled={shownContacts === 0}
-          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white disabled:opacity-40"
+          className="rounded-lg border border-edge2 px-3 py-1.5 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
         >
           Excel-CSV
         </button>
       </div>
 
-      <div className="divide-y divide-zinc-800/60">
+      <div className="divide-y divide-edge">
         {filtered.map((g) => {
           const isOpen = forceOpen || open.has(g.key);
           const withEmail = g.contacts.filter((c) => c.email).length;
@@ -291,49 +291,49 @@ export default function LeadsTable({
               <button
                 type="button"
                 onClick={() => toggle(g.key)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800/30"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-wash"
               >
                 <span
                   className={
-                    "text-zinc-500 transition-transform " + (isOpen ? "rotate-90" : "")
+                    "text-faint transition-transform " + (isOpen ? "rotate-90" : "")
                   }
                 >
                   ▸
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="truncate font-medium text-zinc-100">{g.name}</span>
+                    <span className="truncate font-medium text-ink">{g.name}</span>
                     {g.website && (
                       <a
                         href={g.website}
                         target="_blank"
                         onClick={(e) => e.stopPropagation()}
-                        className="truncate text-xs text-zinc-500 underline-offset-4 hover:text-indigo-300 hover:underline"
+                        className="truncate text-xs text-faint underline-offset-4 hover:text-indigo-600 dark:hover:text-indigo-600 dark:text-indigo-300 hover:underline"
                       >
                         {g.website.replace(/^https?:\/\//, "")}
                       </a>
                     )}
                   </span>
                 </span>
-                <span className="shrink-0 text-xs text-zinc-500">
+                <span className="shrink-0 text-xs text-faint">
                   {g.contacts.length} {g.contacts.length === 1 ? "Kontakt" : "Kontakte"}
                   {" · "}
-                  <span className={withEmail > 0 ? "text-emerald-400" : ""}>
+                  <span className={withEmail > 0 ? "text-emerald-600 dark:text-emerald-400" : ""}>
                     {withEmail} mit E-Mail
                   </span>
                 </span>
               </button>
 
               {isOpen && (
-                <div className="border-t border-zinc-800/60 bg-zinc-950/40 px-4 pb-4 pt-3">
+                <div className="border-t border-edge bg-surface/60 px-4 pb-4 pt-3">
                   {g.personalization && (
-                    <p className="mb-3 max-w-3xl border-l-2 border-indigo-500/40 pl-3 text-xs italic leading-relaxed text-zinc-400">
+                    <p className="mb-3 max-w-3xl border-l-2 border-indigo-500/40 pl-3 text-xs italic leading-relaxed text-soft">
                       {g.personalization}
                     </p>
                   )}
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs text-zinc-600">
+                      <tr className="text-left text-xs text-mute">
                         <th className="py-1.5 pr-4 font-medium">Person</th>
                         <th className="py-1.5 pr-4 font-medium">Position</th>
                         <th className="py-1.5 pr-4 font-medium">E-Mail</th>
@@ -343,37 +343,37 @@ export default function LeadsTable({
                     </thead>
                     <tbody>
                       {g.contacts.map((c) => (
-                        <tr key={c.id} className="border-t border-zinc-800/40">
-                          <td className="py-2 pr-4 text-zinc-200">
+                        <tr key={c.id} className="border-t border-edge/40">
+                          <td className="py-2 pr-4 text-ink">
                             {c.linkedin ? (
                               <a href={c.linkedin} target="_blank"
-                                className="underline-offset-4 hover:text-indigo-300 hover:underline">
+                                className="underline-offset-4 hover:text-indigo-600 dark:hover:text-indigo-600 dark:text-indigo-300 hover:underline">
                                 {c.full_name ?? "—"}
                               </a>
                             ) : (
                               c.full_name ?? "—"
                             )}
                           </td>
-                          <td className="py-2 pr-4 text-zinc-500">{c.title ?? "—"}</td>
+                          <td className="py-2 pr-4 text-faint">{c.title ?? "—"}</td>
                           <td className="py-2 pr-4">
                             {c.email ? (
-                              <span className="text-zinc-200">
+                              <span className="text-ink">
                                 {c.email}
                                 {c.email_confidence != null && (
-                                  <span className="ml-1.5 text-xs text-zinc-500">{c.email_confidence}%</span>
+                                  <span className="ml-1.5 text-xs text-faint">{c.email_confidence}%</span>
                                 )}
                               </span>
                             ) : (
-                              <span className="text-zinc-600">—</span>
+                              <span className="text-mute">—</span>
                             )}
                           </td>
-                          <td className="py-2 pr-4 text-zinc-300">
-                            {c.phone ?? <span className="text-zinc-600">—</span>}
+                          <td className="py-2 pr-4 text-soft">
+                            {c.phone ?? <span className="text-mute">—</span>}
                           </td>
                           <td className="py-2">
                             <span className="flex gap-1">
                               {c.sources.map((s) => (
-                                <span key={s} className="rounded-full border border-zinc-700/80 bg-zinc-800/60 px-2 py-0.5 text-[11px] text-zinc-400">
+                                <span key={s} className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-soft">
                                   {SOURCE_LABEL[s] ?? s}
                                 </span>
                               ))}
@@ -389,7 +389,7 @@ export default function LeadsTable({
           );
         })}
         {filtered.length === 0 && (
-          <p className="px-4 py-10 text-center text-zinc-500">Keine Leads gefunden.</p>
+          <p className="px-4 py-10 text-center text-faint">Keine Leads gefunden.</p>
         )}
       </div>
     </section>

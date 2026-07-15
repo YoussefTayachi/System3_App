@@ -47,9 +47,9 @@ export default function SearchSettings({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && saveName()}
             autoFocus
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-lg font-semibold text-zinc-100 outline-none focus:border-indigo-500"
+            className="rounded-lg border border-edge2 bg-field px-3 py-1.5 text-lg font-semibold text-ink outline-none focus:border-indigo-500"
           />
-          <button onClick={saveName} className="text-xs text-indigo-300 hover:text-indigo-200">
+          <button onClick={saveName} className="text-xs text-indigo-600 dark:text-indigo-300 hover:text-indigo-500 dark:hover:text-indigo-200">
             Speichern
           </button>
         </span>
@@ -59,8 +59,8 @@ export default function SearchSettings({
           title="Umbenennen"
           className="group flex items-center gap-2 text-left"
         >
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-100">{name}</h1>
-          <span className="text-xs text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100">
+          <h1 className="text-xl font-semibold tracking-tight text-ink">{name}</h1>
+          <span className="text-xs text-mute opacity-0 transition-opacity group-hover:opacity-100">
             ✎ umbenennen
           </span>
         </button>
@@ -68,7 +68,7 @@ export default function SearchSettings({
       <select
         value={schedule}
         onChange={(e) => saveSchedule(e.target.value)}
-        className="rounded-lg border border-zinc-700/80 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-300 outline-none focus:border-indigo-500"
+        className="rounded-lg border border-edge2 bg-field px-2.5 py-1.5 text-xs text-soft outline-none focus:border-indigo-500"
         title="Lead-Abo: Liste automatisch mit neuen Firmen nachfüllen"
       >
         <option value="none">Kein Abo</option>

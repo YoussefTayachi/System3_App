@@ -21,9 +21,9 @@ const COUNTRIES = [
 const HEADCOUNTS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"];
 
 const inputCls =
-  "mt-1.5 rounded-lg border border-zinc-700/80 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 " +
-  "placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500";
-const labelCls = "flex flex-col text-xs font-medium text-zinc-400";
+  "mt-1.5 rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink " +
+  "placeholder-mute outline-none transition-colors focus:border-indigo-500";
+const labelCls = "flex flex-col text-xs font-medium text-soft";
 
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
@@ -84,11 +84,11 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
 
   const tabCls = (active: boolean) =>
     "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors " +
-    (active ? "bg-indigo-500/15 text-indigo-300" : "text-zinc-500 hover:text-zinc-200");
+    (active ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" : "text-faint hover:text-ink");
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-900/60 p-1 w-fit">
+      <div className="flex gap-1 rounded-xl border border-edge bg-panel p-1 w-fit">
         <button type="button" className={tabCls(mode === "maps")} onClick={() => setMode("maps")}>
           Lokal (Google Maps)
         </button>
@@ -177,12 +177,12 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
         </div>
       )}
       {mode === "corporate" && (
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-mute">
           Hinweis: Stadtnamen englisch eingeben (Vienna statt Wien). Die Firmensuche selbst ist bei
           Hunter kostenlos — Credits fallen erst bei der E-Mail-Suche pro Firma an.
         </p>
       )}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </form>
   );
 }
@@ -191,7 +191,7 @@ function SubmitButton({ loading }: { loading: boolean }) {
   return (
     <button
       disabled={loading}
-      className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50"
+      className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
     >
       {loading ? "Wird gestartet..." : "Suche starten"}
     </button>

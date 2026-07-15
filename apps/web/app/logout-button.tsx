@@ -6,7 +6,7 @@ export default function LogoutButton() {
   const router = useRouter();
   return (
     <button
-      className="text-xs text-zinc-500 transition-colors hover:text-zinc-200"
+      className="text-xs text-faint transition-colors hover:text-ink"
       onClick={async () => {
         await createClient().auth.signOut();
         router.push("/login");
