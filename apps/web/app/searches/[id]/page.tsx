@@ -15,7 +15,7 @@ export default async function SearchDetailPage({
     supabase.from("searches").select("*").eq("id", id).single(),
     supabase
       .from("contacts")
-      .select("*, businesses!inner(name, website, personalization, search_id)")
+      .select("*, businesses!inner(name, website, personalization, search_id, address, phone_national, decisionmaker_status, hunter_status)")
       .eq("businesses.search_id", id)
       .order("created_at", { ascending: false })
       .limit(1000),
