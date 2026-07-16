@@ -196,10 +196,11 @@ function withoutInvalidEmails(groups: Group[], enabled: boolean): Group[] {
 function toCsv(groups: Group[], headers: readonly string[]): string {
   const esc = (v: unknown) => '"' + (v == null ? "" : String(v)).replace(/"/g, '""') + '"';
   const lines = groups.flatMap((g) =>
-    g.contacts.map((c) =>
-      [g.name, g.website, g.company_summary, c.full_name, c.title, c.email, c.email_confidence,
-       c.phone, c.linkedin, c.sources.join("+"), g.personalization].map(esc).join(";")
-    )
+    g.contacts.map((c) => {
+      const { first, last } = splitName(c);
+      return [g.name, g.website, g.company_summary, first, last, c.title, c.email, c.email_confidence,
+       c.phone, c.linkedin, c.sources.join("+"), g.personalization].map(esc).join(";");
+    })
   );
   return [headers.join(";"), ...lines].join("\n");
 }

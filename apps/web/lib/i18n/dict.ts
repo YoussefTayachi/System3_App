@@ -195,7 +195,7 @@ const de = {
     confidenceSuffix: "% Confidence",
     unverifiedEmail: "Unverifiziert — vor dem Versand prüfen",
     csvHeaders: [
-      "Firma", "Website", "Firmenbeschreibung", "Person", "Position", "E-Mail",
+      "Firma", "Website", "Firmenbeschreibung", "Vorname", "Nachname", "Position", "E-Mail",
       "Confidence", "Telefon", "LinkedIn", "Quellen", "Personalisierung",
     ],
   },
@@ -468,7 +468,7 @@ const en: Dictionary = {
     confidenceSuffix: "% confidence",
     unverifiedEmail: "Unverified — check before sending",
     csvHeaders: [
-      "Company", "Website", "Company summary", "Person", "Title", "Email",
+      "Company", "Website", "Company summary", "First name", "Last name", "Title", "Email",
       "Confidence", "Phone", "LinkedIn", "Sources", "Personalization",
     ],
   },
