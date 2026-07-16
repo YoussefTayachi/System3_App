@@ -323,7 +323,7 @@ export default function LeadsTable({
   const [cols, setCols] = useState<Set<string>>(new Set(ALL_COLUMN_IDS));
   const [colsOpen, setColsOpen] = useState(false);
   const colsRef = useRef<HTMLDivElement>(null);
-  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkAction, setBulkAction] = useState<"" | "block" | "delete">("");
   const [excludeInvalid, setExcludeInvalid] = useState(true);
   const [verifyStatus, setVerifyStatus] = useState("");
 
@@ -404,6 +404,22 @@ export default function LeadsTable({
     });
   }
 
+  const allFilteredSelected = filtered.length > 0 && filtered.every((g) => selected.has(g.key));
+  const someFilteredSelected = filtered.some((g) => selected.has(g.key));
+
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      if (allFilteredSelected) {
+        const next = new Set(prev);
+        filtered.forEach((g) => next.delete(g.key));
+        return next;
+      }
+      const next = new Set(prev);
+      filtered.forEach((g) => next.add(g.key));
+      return next;
+    });
+  }
+
   function download(content: string, suffix: string) {
     const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -416,7 +432,7 @@ export default function LeadsTable({
 
   async function blockSelected() {
     if (!confirm(L.bulkBlockConfirm(selectedGroups.length))) return;
-    setBulkStatus(L.bulkBlocking);
+    setBulkAction("block");
     const supabase = createClient();
     const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
     if (!ws) return;
@@ -430,8 +446,22 @@ export default function LeadsTable({
     if (rows.length) {
       await supabase.from("suppression_list").upsert(rows, { onConflict: "workspace_id,email", ignoreDuplicates: true });
     }
-    setBulkStatus("");
+    setBulkAction("");
     push(t.blocklist.blockedSummary(0, rows.length), "success");
+    setSelected(new Set());
+    router.refresh();
+  }
+
+  async function deleteSelected() {
+    if (!confirm(L.bulkDeleteConfirm(selectedGroups.length))) return;
+    setBulkAction("delete");
+    const supabase = createClient();
+    const contactIds = selectedGroups.flatMap((g) => g.contacts.map((c) => c.id));
+    for (let i = 0; i < contactIds.length; i += 200) {
+      await supabase.from("contacts").delete().in("id", contactIds.slice(i, i + 200));
+    }
+    setBulkAction("");
+    push(L.bulkDeleteDone(selectedGroups.length), "success");
     setSelected(new Set());
     router.refresh();
   }
@@ -491,6 +521,18 @@ export default function LeadsTable({
               ))}
             </select>
           )}
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-soft" title={L.selectAllTitle}>
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = !allFilteredSelected && someFilteredSelected;
+              }}
+              onChange={toggleSelectAll}
+              className="h-4 w-4 rounded accent-indigo-500"
+            />
+            {L.selectAll}
+          </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-soft">
             <input
               type="checkbox"
@@ -724,9 +766,17 @@ export default function LeadsTable({
             </button>
             <button
               onClick={blockSelected}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:border-red-500 dark:border-red-900/60 dark:text-red-400"
+              disabled={bulkAction !== ""}
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:border-red-500 disabled:opacity-40 dark:border-red-900/60 dark:text-red-400"
             >
-              {bulkStatus || L.bulkBlock}
+              {bulkAction === "block" ? L.bulkBlocking : L.bulkBlock}
+            </button>
+            <button
+              onClick={deleteSelected}
+              disabled={bulkAction !== ""}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-40"
+            >
+              {bulkAction === "delete" ? L.bulkDeleting : L.bulkDelete}
             </button>
             <button
               onClick={() => setSelected(new Set())}

@@ -167,6 +167,13 @@ const de = {
     bulkBlock: "Blockieren",
     bulkBlockConfirm: (n: number) =>
       `${n} Firmen auf die Blockliste setzen? Sie verschwinden aus allen Ansichten und werden nie mehr recherchiert.`,
+    bulkDeleting: "Lösche...",
+    bulkDelete: "Löschen",
+    bulkDeleteConfirm: (n: number) =>
+      `${n} Firmen mit allen Kontakten endgültig löschen? Das kann nicht rückgängig gemacht werden.`,
+    bulkDeleteDone: (n: number) => `${n} Firmen gelöscht.`,
+    selectAll: "Alle auswählen",
+    selectAllTitle: "Alle aktuell angezeigten Firmen auswählen",
     deselect: "Abwählen",
     pipeline: "Anreicherungs-Pipeline",
     pipelineFound: "Firma gefunden",
@@ -433,6 +440,13 @@ const en: Dictionary = {
     bulkBlock: "Block",
     bulkBlockConfirm: (n: number) =>
       `Add ${n} companies to the blocklist? They will disappear from all views and never be researched again.`,
+    bulkDeleting: "Deleting...",
+    bulkDelete: "Delete",
+    bulkDeleteConfirm: (n: number) =>
+      `Permanently delete ${n} companies and all their contacts? This cannot be undone.`,
+    bulkDeleteDone: (n: number) => `${n} companies deleted.`,
+    selectAll: "Select all",
+    selectAllTitle: "Select all currently shown companies",
     deselect: "Deselect",
     pipeline: "Enrichment pipeline",
     pipelineFound: "Company found",
