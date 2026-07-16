@@ -78,8 +78,8 @@ export default async function Dashboard() {
       {hasActive && <AutoRefresh />}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{t.dashboard.title}</h1>
-          <p className="text-[13px] text-faint">{t.dashboard.subtitle}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.dashboard.title}</h1>
+          <p className="text-sm text-faint">{t.dashboard.subtitle}</p>
         </div>
         {hasActive && (
           <div className="flex flex-col items-end gap-1.5">
@@ -99,7 +99,7 @@ export default async function Dashboard() {
         {kpis.map((k) => (
           <div key={k.label} className="px-4 py-3.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{k.label}</p>
-            <p className="mt-0.5 text-xl font-semibold tracking-tight text-ink">
+            <p className="mt-0.5 text-2xl font-semibold tracking-tight text-ink">
               {typeof k.value === "number" ? <CountUp value={k.value} /> : k.value}
             </p>
             {k.sub && <p className="text-[11px] text-mute">{k.sub}</p>}
@@ -146,7 +146,7 @@ export default async function Dashboard() {
                   {(c.full_name ?? "?").split(" ").map((w: string) => w[0]).slice(0, 2).join("")}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-ink">{c.full_name ?? "—"}</p>
+                  <p className="truncate text-sm font-medium text-ink">{c.full_name ?? "—"}</p>
                   <p className="truncate text-xs text-faint">
                     {c.title ? c.title + " · " : ""}
                     {(c.businesses as unknown as { name: string } | null)?.name}
@@ -167,7 +167,7 @@ export default async function Dashboard() {
       {/* Neue Suche */}
       <section className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm">
         <h2 className="mb-1 text-sm font-medium text-ink">{t.dashboard.newSearch}</h2>
-        <p className="mb-4 text-[13px] text-faint">{t.dashboard.newSearchHint}</p>
+        <p className="mb-4 text-sm text-faint">{t.dashboard.newSearchHint}</p>
         {wsRes.data ? <NewSearchForm workspaceId={wsRes.data.id} /> : null}
       </section>
 
@@ -177,7 +177,7 @@ export default async function Dashboard() {
           <h2 className="text-sm font-medium text-ink">{t.dashboard.recentSearches}</h2>
           <Link href="/searches" className="text-xs text-faint hover:text-ink">{t.dashboard.showAll}</Link>
         </div>
-        <table className="w-full text-[13px]">
+        <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge/60 text-left text-xs text-mute">
               <th className="px-5 py-2 font-medium">{t.dashboard.table.list}</th>

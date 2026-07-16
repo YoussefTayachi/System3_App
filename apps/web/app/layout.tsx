@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <LanguageProvider lang={lang}>
           <div className="flex min-h-screen">
-            <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-edge/60 bg-panel2 px-3 py-5 md:flex">
+            <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
               <div className="mb-6 flex items-center gap-2 px-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
                   3
@@ -68,11 +68,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </div>
               </div>
             </aside>
-            <div className="min-w-0 flex-1 md:pl-56">
+            <div className="min-w-0 flex-1 md:pl-64">
               <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
                 <span className="font-semibold">System3</span>
               </header>
-              <main className="mx-auto max-w-6xl px-8 py-7">{children}</main>
+              <main className="mx-auto max-w-7xl px-8 py-7">{children}</main>
             </div>
           </div>
         </LanguageProvider>

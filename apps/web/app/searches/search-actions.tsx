@@ -18,7 +18,7 @@ export function TrashButton({ searchId }: { searchId: string }) {
           .eq("id", searchId);
         router.refresh();
       }}
-      className="rounded-lg border border-edge/60 px-2.5 py-1.5 text-xs text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
+      className="rounded-lg border border-edge/60 px-3 py-2 text-sm text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
     >
       {t.searchActions.delete}
     </button>
@@ -34,7 +34,7 @@ export function RestoreButton({ searchId }: { searchId: string }) {
         await createClient().from("searches").update({ deleted_at: null }).eq("id", searchId);
         router.refresh();
       }}
-      className="rounded-lg border border-edge2 px-3 py-1.5 text-xs text-soft transition-colors hover:border-edge3 hover:text-ink"
+      className="rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors hover:border-edge3 hover:text-ink"
     >
       {t.searchActions.restore}
     </button>
@@ -53,7 +53,7 @@ export function HardDeleteButton({ searchId }: { searchId: string }) {
         await supabase.from("searches").delete().eq("id", searchId);
         router.refresh();
       }}
-      className="rounded-lg border border-red-300 dark:border-red-900/60 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 transition-colors hover:border-red-500 hover:text-red-500 dark:hover:text-red-500 dark:text-red-300"
+      className="rounded-lg border border-red-300 dark:border-red-900/60 px-4 py-2 text-sm text-red-600 dark:text-red-400 transition-colors hover:border-red-500 hover:text-red-500 dark:hover:text-red-500 dark:text-red-300"
     >
       {t.searchActions.hardDelete}
     </button>

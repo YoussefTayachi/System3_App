@@ -7,11 +7,11 @@ import { useT } from "../language-provider";
 const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const;
 
 const inputCls =
-  "rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink " +
+  "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
   "placeholder-mute outline-none transition-colors focus:border-indigo-500";
 
 const btnCls =
-  "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg " +
+  "rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg " +
   "shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50";
 
 export default function SettingsPage() {
@@ -54,7 +54,7 @@ export default function SettingsPage() {
   return (
     <div className="fade-up max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{t.settings.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.settings.title}</h1>
         <p className="text-sm text-faint">{t.settings.subtitle}</p>
       </div>
 

@@ -91,7 +91,7 @@ export default function BlocklistPage() {
   return (
     <div className="fade-up max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{t.blocklist.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.blocklist.title}</h1>
         <p className="text-sm text-faint">{t.blocklist.subtitle}</p>
       </div>
 
@@ -110,7 +110,7 @@ export default function BlocklistPage() {
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => addEntries(input)}
-            className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
+            className="rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
           >
             {t.blocklist.block}
           </button>

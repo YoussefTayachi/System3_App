@@ -26,13 +26,13 @@ export default function Nav() {
             key={href}
             href={href}
             className={
-              "relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-all duration-200 " +
+              "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 " +
               (active
                 ? "border border-edge/60 bg-panel font-medium text-ink shadow-sm"
                 : "border border-transparent text-soft hover:bg-chip hover:text-ink")
             }
           >
-            <Icon className={"h-4 w-4 " + (active ? "text-indigo-600 dark:text-indigo-400" : "text-faint")} />
+            <Icon className={"h-[18px] w-[18px] " + (active ? "text-indigo-600 dark:text-indigo-400" : "text-faint")} />
             {label}
           </Link>
         );

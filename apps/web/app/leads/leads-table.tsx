@@ -427,14 +427,14 @@ export default function LeadsTable({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={L.searchPlaceholder}
-              className="w-full rounded-lg border border-edge2 bg-field py-2 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-indigo-500"
+              className="w-full rounded-lg border border-edge2 bg-field py-2.5 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-indigo-500"
             />
           </div>
           {searches && searches.length > 0 && (
             <select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-indigo-500"
+              className="rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-indigo-500"
             >
               <option value="">{L.allSearches}</option>
               {searches.map((s) => (
@@ -467,14 +467,14 @@ export default function LeadsTable({
             onClick={() => verifyEmails(filtered)}
             disabled={unverifiedCount === 0}
             title={L.verifyEmailsTitle}
-            className="rounded-lg border border-edge2 px-3 py-2 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
+            className="rounded-lg border border-edge2 px-4 py-2 text-sm font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
           >
             {L.verifyEmails}{unverifiedCount > 0 ? ` (${unverifiedCount})` : ""}
           </button>
           <div className="relative" ref={colsRef}>
             <button
               onClick={() => setColsOpen(!colsOpen)}
-              className="rounded-lg border border-edge2 px-3 py-2 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink"
+              className="rounded-lg border border-edge2 px-4 py-2 text-sm font-medium text-soft transition-colors hover:border-edge3 hover:text-ink"
             >
               {L.columns}
             </button>
@@ -502,14 +502,14 @@ export default function LeadsTable({
             onClick={() => download(toInstantlyCsv(withoutInvalidEmails(filtered, excludeInvalid)), "-instantly.csv")}
             disabled={shownContacts === 0}
             title={L.exportInstantlyTitle}
-            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
+            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
           >
             {L.exportInstantly}
           </button>
           <button
             onClick={() => download(toCsv(withoutInvalidEmails(filtered, excludeInvalid), L.csvHeaders), ".csv")}
             disabled={shownContacts === 0}
-            className="rounded-lg border border-edge2 px-3 py-1.5 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
+            className="rounded-lg border border-edge2 px-4 py-2 text-sm font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
           >
             {L.exportExcel}
           </button>
@@ -662,19 +662,19 @@ export default function LeadsTable({
             </span>
             <button
               onClick={() => download(toInstantlyCsv(withoutInvalidEmails(selectedGroups, excludeInvalid)), "-auswahl-instantly.csv")}
-              className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 active:scale-[0.98]"
             >
               {L.bulkExportInstantly}
             </button>
             <button
               onClick={() => download(toCsv(withoutInvalidEmails(selectedGroups, excludeInvalid), L.csvHeaders), "-auswahl.csv")}
-              className="rounded-lg border border-edge2 px-3 py-1.5 text-xs text-soft transition-colors hover:border-edge3 hover:text-ink"
+              className="rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors hover:border-edge3 hover:text-ink"
             >
               {L.bulkExportExcel}
             </button>
             <button
               onClick={blockSelected}
-              className="rounded-lg border border-red-300 px-3 py-1.5 text-xs text-red-600 transition-colors hover:border-red-500 dark:border-red-900/60 dark:text-red-400"
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:border-red-500 dark:border-red-900/60 dark:text-red-400"
             >
               {bulkStatus || L.bulkBlock}
             </button>

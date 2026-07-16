@@ -61,7 +61,7 @@ export default function SearchSettings({
           title={t.searchSettings.renameTitle}
           className="group flex items-center gap-2 text-left"
         >
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{name}</h1>
           <span className="text-xs text-mute opacity-0 transition-opacity group-hover:opacity-100">
             {t.searchSettings.renameHint}
           </span>

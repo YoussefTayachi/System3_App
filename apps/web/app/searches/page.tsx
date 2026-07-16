@@ -44,12 +44,12 @@ export default async function SearchesPage() {
       {anyRunning && <AutoRefresh />}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{t.searches.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.searches.title}</h1>
           <p className="text-sm text-faint">{t.searches.subtitle}</p>
         </div>
         <Link
           href="/"
-          className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
+          className="rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
         >
           {t.searches.newSearch}
         </Link>

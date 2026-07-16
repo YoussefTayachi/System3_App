@@ -17,9 +17,9 @@ const COUNTRY_CODES = ["AT", "DE", "CH", "GB", "US", "NL", "FR", "IT", "ES"];
 const HEADCOUNTS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"];
 
 const inputCls =
-  "mt-1.5 rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink " +
+  "mt-1.5 rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
   "placeholder-mute outline-none transition-colors focus:border-indigo-500";
-const labelCls = "flex flex-col text-xs font-medium text-soft";
+const labelCls = "flex flex-col text-sm font-medium text-soft";
 
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
@@ -186,7 +186,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     return (
       <button
         disabled={loading}
-        className="rounded-lg bg-ink px-5 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-50"
+        className="rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-50"
       >
         {loading ? t.newSearchForm.starting : t.newSearchForm.start}
       </button>

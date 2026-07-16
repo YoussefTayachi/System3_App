@@ -31,7 +31,7 @@ export default async function LeadsPage() {
   return (
     <div className="fade-up space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{t.leads.allLeadsTitle}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.leads.allLeadsTitle}</h1>
         <p className="text-sm text-faint">{t.leads.allLeadsSubtitle}</p>
       </div>
       <LeadsTable contacts={contacts} searches={searchOptions} exportName="alle-leads" />
