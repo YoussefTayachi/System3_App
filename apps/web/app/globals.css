@@ -73,10 +73,14 @@ body {
 .skeleton { animation: shimmer 1.6s ease-in-out infinite; background: var(--c-chip); border-radius: 8px; }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; top: 6px; }
+  to { opacity: 1; top: 0; }
 }
-.fade-up { animation: fadeUp 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+/* Nutzt position:relative + top statt transform: ein liegen gebliebenes transform (auch
+   translateY(0)) erzeugt sonst einen neuen containing block fuer position:fixed-Nachkommen
+   (z.B. die Bulk-Aktionsleiste/den Leads-Drawer) und reisst deren Fixierung an den Viewport ab.
+   margin-top waere ebenfalls riskant, da es mit space-y-*-Utilities kollidiert. */
+.fade-up { position: relative; animation: fadeUp 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 
 @keyframes rise { from { transform: scaleY(0); opacity: 0.3; } }
 
