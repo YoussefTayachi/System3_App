@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { IconSearch } from "../icons";
 import { useT } from "../language-provider";
+import { useToast } from "../toast-provider";
 import type { Dictionary } from "@/lib/i18n/dict";
 
 type Contact = {
@@ -63,6 +64,44 @@ type SearchOption = { id: string; query: string; location: string };
 type LeadsDict = Dictionary["leads"];
 
 const ALL_COLUMN_IDS = ["title", "email", "phone", "sources"] as const;
+
+function faviconUrl(website: string | null): string | null {
+  if (!website) return null;
+  try {
+    const host = website.replace(/^https?:\/\//, "").split("/")[0];
+    if (!host) return null;
+    return "https://www.google.com/s2/favicons?domain=" + host + "&sz=64";
+  } catch {
+    return null;
+  }
+}
+
+function CompanyLogo({ name, website, size = 24 }: { name: string; website: string | null; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const url = faviconUrl(website);
+  const px = size + "px";
+  if (!url || failed) {
+    return (
+      <span
+        className="flex shrink-0 items-center justify-center rounded-md bg-chip text-[10px] font-semibold text-soft"
+        style={{ width: px, height: px }}
+      >
+        {(name || "?").slice(0, 1).toUpperCase()}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt=""
+      width={size}
+      height={size}
+      className="shrink-0 rounded-md bg-chip object-contain"
+      style={{ width: px, height: px }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function normName(name: string | null): string | null {
   if (!name) return null;
@@ -263,11 +302,13 @@ export default function LeadsTable({
   exportName?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useT();
+  const { push } = useToast();
   const L = t.leads;
   const ALL_COLUMNS = ALL_COLUMN_IDS.map((id) => ({ id, label: L.columnLabels[id] }));
 
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
   const [onlyEmail, setOnlyEmail] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -384,6 +425,7 @@ export default function LeadsTable({
       await supabase.from("suppression_list").upsert(rows, { onConflict: "workspace_id,email", ignoreDuplicates: true });
     }
     setBulkStatus("");
+    push(t.blocklist.blockedSummary(0, rows.length), "success");
     setSelected(new Set());
     router.refresh();
   }
@@ -400,11 +442,12 @@ export default function LeadsTable({
       body: JSON.stringify({ contact_ids: ids }),
     });
     const body = await res.json();
-    setVerifyStatus(
-      res.ok
-        ? `${body.checked} ${L.verifyChecked} · ${body.valid} ${L.verifyValid} · ${body.invalid} ${L.verifyInvalid}`
-        : t.common.error + body.error
-    );
+    setVerifyStatus("");
+    if (res.ok) {
+      push(`${body.checked} ${L.verifyChecked} · ${body.valid} ${L.verifyValid} · ${body.invalid} ${L.verifyInvalid}`, "success");
+    } else {
+      push(t.common.error + body.error, "error");
+    }
     router.refresh();
   }
 
@@ -553,9 +596,10 @@ export default function LeadsTable({
                   <button
                     type="button"
                     onClick={() => setDrawer(g)}
-                    className="min-w-0 flex-1 cursor-pointer text-left"
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left"
                   >
-                    <span className="flex items-center gap-2">
+                    <CompanyLogo name={g.name} website={g.website} size={22} />
+                    <span className="flex min-w-0 items-center gap-2">
                       <span className="truncate font-medium text-ink underline-offset-4 hover:underline">{g.name}</span>
                       {g.website && (
                         <span className="truncate text-xs text-faint">
@@ -697,14 +741,17 @@ export default function LeadsTable({
           />
           <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-edge/60 bg-panel p-6 shadow-2xl [animation:fadeUp_.25s_ease]">
             <div className="mb-5 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-ink">{drawer.name}</h2>
-                {drawer.website && (
-                  <a href={drawer.website} target="_blank"
-                    className="text-xs text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-300">
-                    {drawer.website.replace(/^https?:\/\//, "")}
-                  </a>
-                )}
+              <div className="flex items-start gap-2.5">
+                <CompanyLogo name={drawer.name} website={drawer.website} size={32} />
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight text-ink">{drawer.name}</h2>
+                  {drawer.website && (
+                    <a href={drawer.website} target="_blank"
+                      className="text-xs text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-300">
+                      {drawer.website.replace(/^https?:\/\//, "")}
+                    </a>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setDrawer(null)}

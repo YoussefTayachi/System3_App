@@ -6,6 +6,8 @@ import Nav from "./nav";
 import LogoutButton from "./logout-button";
 import ThemeToggle from "./theme-toggle";
 import { LanguageProvider, LanguageToggle } from "./language-provider";
+import CommandPalette, { CommandPaletteTrigger } from "./command-palette";
+import { ToastProvider } from "./toast-provider";
 
 export const metadata = {
   title: "System3 — Lead-Gen & Outreach",
@@ -42,6 +44,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <LanguageProvider lang={lang}>
+          <ToastProvider>
+          <CommandPalette />
           <div className="flex min-h-screen">
             <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
               <div className="mb-6 flex items-center gap-2 px-2">
@@ -52,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   System3
                 </span>
               </div>
+              <CommandPaletteTrigger />
               <Nav />
               <div className="mt-auto border-t border-edge/60 pt-4">
                 <div className="flex items-center justify-between px-2">
@@ -75,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <main className="mx-auto max-w-7xl px-8 py-7">{children}</main>
             </div>
           </div>
+          </ToastProvider>
         </LanguageProvider>
       </body>
     </html>

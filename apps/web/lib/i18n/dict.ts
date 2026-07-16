@@ -16,6 +16,15 @@ const de = {
     dashboard: "Dashboard", searches: "Suchen", leads: "Alle Leads",
     aiAgent: "AI Agent", blocklist: "Blockliste", settings: "Einstellungen",
   },
+  commandPalette: {
+    placeholder: "Seiten oder Firmen suchen...",
+    hint: "Öffnen mit",
+    pagesHeading: "Seiten",
+    companiesHeading: "Firmen",
+    noResults: "Keine Ergebnisse",
+    searching: "Suche...",
+    triggerLabel: "Suche...",
+  },
   logout: "Abmelden",
   login: {
     tagline: "Leads finden · anreichern · personalisieren",
@@ -272,6 +281,15 @@ const en: Dictionary = {
   nav: {
     dashboard: "Dashboard", searches: "Searches", leads: "All Leads",
     aiAgent: "AI Agent", blocklist: "Blocklist", settings: "Settings",
+  },
+  commandPalette: {
+    placeholder: "Search pages or companies...",
+    hint: "Open with",
+    pagesHeading: "Pages",
+    companiesHeading: "Companies",
+    noResults: "No results",
+    searching: "Searching...",
+    triggerLabel: "Search...",
   },
   logout: "Log out",
   login: {

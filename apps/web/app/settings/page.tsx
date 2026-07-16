@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { IconLock } from "../icons";
 import { useT } from "../language-provider";
+import { useToast } from "../toast-provider";
 
 const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const;
 
@@ -16,6 +17,7 @@ const btnCls =
 
 export default function SettingsPage() {
   const { t } = useT();
+  const { push } = useToast();
   const [saved, setSaved] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
@@ -41,9 +43,12 @@ export default function SettingsPage() {
       setStatus((s) => ({ ...s, [provider]: t.settings.encryptedOk }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
       setValues((v) => ({ ...v, [provider]: "" }));
+      push(providerLabels[provider] + ": " + t.settings.encryptedOk, "success");
     } else {
       const body = await res.json().catch(() => ({}));
-      setStatus((s) => ({ ...s, [provider]: t.common.error + (body.error ?? res.status) }));
+      const message = t.common.error + (body.error ?? res.status);
+      setStatus((s) => ({ ...s, [provider]: message }));
+      push(message, "error");
     }
   }
 

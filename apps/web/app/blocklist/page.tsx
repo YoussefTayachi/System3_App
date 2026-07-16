@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "../language-provider";
+import { useToast } from "../toast-provider";
 
 type Row = { id: string; email: string | null; domain: string | null; reason: string };
 
@@ -27,9 +28,9 @@ function parseInput(text: string): { emails: string[]; domains: string[] } {
 
 export default function BlocklistPage() {
   const { t } = useT();
+  const { push } = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("");
   const [wsId, setWsId] = useState<string | null>(null);
 
   async function reload() {
@@ -55,10 +56,9 @@ export default function BlocklistPage() {
     if (!wsId) return;
     const { emails, domains } = parseInput(text);
     if (emails.length === 0 && domains.length === 0) {
-      setStatus(t.blocklist.noValidEntries);
+      push(t.blocklist.noValidEntries, "error");
       return;
     }
-    setStatus(t.blocklist.saving);
     const supabase = createClient();
     const rowsToInsert = [
       ...emails.map((email) => ({ workspace_id: wsId, email, reason: "manual" })),
@@ -69,7 +69,7 @@ export default function BlocklistPage() {
         .from("suppression_list")
         .upsert(rowsToInsert.slice(i, i + 500), { onConflict: "workspace_id,email", ignoreDuplicates: true });
     }
-    setStatus(t.blocklist.blockedSummary(emails.length, domains.length));
+    push(t.blocklist.blockedSummary(emails.length, domains.length), "success");
     setInput("");
     reload();
   }
@@ -118,7 +118,6 @@ export default function BlocklistPage() {
             {t.blocklist.uploadCsv}
             <input type="file" accept=".csv,.txt" onChange={onFile} className="hidden" />
           </label>
-          {status && <span className="text-xs text-faint">{status}</span>}
         </div>
       </div>
 

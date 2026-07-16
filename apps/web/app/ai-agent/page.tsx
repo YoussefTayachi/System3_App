@@ -7,6 +7,7 @@ import {
   DEFAULT_PROMPT,
 } from "@/lib/personalization-defaults";
 import { useT } from "../language-provider";
+import { useToast } from "../toast-provider";
 
 type BusinessOption = { id: string; name: string; company_summary: string | null; website: string | null };
 type TestResult = { text: string; problems: string[]; wordCount: number };
@@ -23,12 +24,12 @@ const ghostBtnCls =
 
 export default function AiAgentPage() {
   const { t, lang } = useT();
+  const { push } = useToast();
   const [wsId, setWsId] = useState<string | null>(null);
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_PROMPT);
   const [source, setSource] = useState<string>("company_summary");
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS);
   const [bannedWordsText, setBannedWordsText] = useState(DEFAULT_BANNED_WORDS.join(", "));
-  const [saveStatus, setSaveStatus] = useState("");
 
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
   const [testBusinessId, setTestBusinessId] = useState("");
@@ -69,7 +70,6 @@ export default function AiAgentPage() {
 
   async function save() {
     if (!wsId) return;
-    setSaveStatus(t.common.saving);
     const supabase = createClient();
     const { error } = await supabase
       .from("workspaces")
@@ -81,7 +81,7 @@ export default function AiAgentPage() {
           bannedWordsText.trim() === DEFAULT_BANNED_WORDS.join(", ") ? null : bannedWordsText.trim(),
       })
       .eq("id", wsId);
-    setSaveStatus(error ? t.common.error + error.message : t.common.savedOk);
+    push(error ? t.common.error + error.message : t.common.savedOk, error ? "error" : "success");
   }
 
   async function runTest() {
@@ -187,7 +187,6 @@ export default function AiAgentPage() {
 
         <div className="mt-4 flex items-center gap-3">
           <button onClick={save} className={btnCls}>{t.aiAgent.save}</button>
-          {saveStatus && <span className="text-xs text-faint">{saveStatus}</span>}
         </div>
       </div>
 
