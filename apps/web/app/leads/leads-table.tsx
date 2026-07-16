@@ -309,6 +309,12 @@ export default function LeadsTable({
   const ALL_COLUMNS = ALL_COLUMN_IDS.map((id) => ({ id, label: L.columnLabels[id] }));
 
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+
+  useEffect(() => {
+    const urlQ = searchParams.get("q");
+    if (urlQ !== null && urlQ !== q) setQ(urlQ);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [onlyEmail, setOnlyEmail] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
