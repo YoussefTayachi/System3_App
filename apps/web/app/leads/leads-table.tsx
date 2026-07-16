@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { IconSearch } from "../icons";
+import { useT } from "../language-provider";
+import type { Dictionary } from "@/lib/i18n/dict";
 
 type Contact = {
   id: string;
@@ -20,6 +22,7 @@ type Contact = {
     name: string;
     website: string | null;
     personalization: string | null;
+    company_summary?: string | null;
     search_id?: string | null;
     address?: string | null;
     phone_national?: string | null;
@@ -47,6 +50,7 @@ type Group = {
   name: string;
   website: string | null;
   personalization: string | null;
+  company_summary: string | null;
   search_id: string | null;
   address: string | null;
   phone_national: string | null;
@@ -56,14 +60,9 @@ type Group = {
 };
 
 type SearchOption = { id: string; query: string; location: string };
+type LeadsDict = Dictionary["leads"];
 
-const SOURCE_LABEL: Record<string, string> = { ai_websearch: "KI", hunter: "Hunter", manual: "Manuell" };
-const ALL_COLUMNS = [
-  { id: "title", label: "Position" },
-  { id: "email", label: "E-Mail" },
-  { id: "phone", label: "Telefon" },
-  { id: "sources", label: "Quellen" },
-] as const;
+const ALL_COLUMN_IDS = ["title", "email", "phone", "sources"] as const;
 
 function normName(name: string | null): string | null {
   if (!name) return null;
@@ -101,6 +100,7 @@ function groupContacts(contacts: Contact[]): Group[] {
         name: b?.name ?? "Unbekannt",
         website: b?.website ?? null,
         personalization: b?.personalization ?? null,
+        company_summary: b?.company_summary ?? null,
         search_id: b?.search_id ?? null,
         address: b?.address ?? null,
         phone_national: b?.phone_national ?? null,
@@ -146,25 +146,31 @@ function splitName(c: Merged): { first: string; last: string } {
   return { first: parts[0] ?? "", last: parts.slice(1).join(" ") };
 }
 
-function toCsv(groups: Group[]): string {
-  const header = [
-    "Firma", "Website", "Person", "Position", "E-Mail", "Confidence",
-    "Telefon", "LinkedIn", "Quellen", "Personalisierung",
-  ];
+function withoutInvalidEmails(groups: Group[], enabled: boolean): Group[] {
+  if (!enabled) return groups;
+  return groups.map((g) => ({
+    ...g,
+    contacts: g.contacts.filter((c) => c.email_verification_status !== "invalid"),
+  }));
+}
+
+function toCsv(groups: Group[], headers: readonly string[]): string {
   const esc = (v: unknown) => '"' + (v == null ? "" : String(v)).replace(/"/g, '""') + '"';
   const lines = groups.flatMap((g) =>
     g.contacts.map((c) =>
-      [g.name, g.website, c.full_name, c.title, c.email, c.email_confidence,
+      [g.name, g.website, g.company_summary, c.full_name, c.title, c.email, c.email_confidence,
        c.phone, c.linkedin, c.sources.join("+"), g.personalization].map(esc).join(";")
     )
   );
-  return [header.join(";"), ...lines].join("\n");
+  return [headers.join(";"), ...lines].join("\n");
 }
 
+// Spaltennamen sind Instantlys eigene Merge-Tag-Namen -- NICHT uebersetzen,
+// unabhaengig von der UI-Sprache, sonst greift Instantlys Auto-Mapping nicht mehr.
 function toInstantlyCsv(groups: Group[]): string {
   const header = [
     "email", "first_name", "last_name", "company_name", "phone",
-    "website", "personalization", "title", "linkedin",
+    "website", "personalization", "company_summary", "title", "linkedin",
   ];
   const esc = (v: unknown) => {
     const s = v == null ? "" : String(v).replace(/\r?\n/g, " ");
@@ -179,7 +185,7 @@ function toInstantlyCsv(groups: Group[]): string {
       seen.add(email);
       const { first, last } = splitName(c);
       lines.push(
-        [email, first, last, g.name, c.phone, g.website, g.personalization, c.title, c.linkedin]
+        [email, first, last, g.name, c.phone, g.website, g.personalization, g.company_summary, c.title, c.linkedin]
           .map(esc)
           .join(",")
       );
@@ -188,7 +194,7 @@ function toInstantlyCsv(groups: Group[]): string {
   return [header.join(","), ...lines].join("\n");
 }
 
-function VerificationShield({ c }: { c: Merged }) {
+function VerificationShield({ c, t }: { c: Merged; t: LeadsDict }) {
   if (!c.email) return null;
   const verified =
     c.email_verification_status === "valid" || (c.email_confidence ?? 0) >= 85;
@@ -196,8 +202,8 @@ function VerificationShield({ c }: { c: Merged }) {
     <span
       title={
         verified
-          ? "Verifizierte E-Mail" + (c.email_confidence ? ` (${c.email_confidence}% Confidence)` : "")
-          : "Unverifiziert — vor dem Versand prüfen"
+          ? t.verifiedEmail + (c.email_confidence ? ` (${c.email_confidence}${t.confidenceSuffix})` : "")
+          : t.unverifiedEmail
       }
       className={verified ? "text-emerald-500" : "text-amber-500"}
     >
@@ -257,16 +263,22 @@ export default function LeadsTable({
   exportName?: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
+  const L = t.leads;
+  const ALL_COLUMNS = ALL_COLUMN_IDS.map((id) => ({ id, label: L.columnLabels[id] }));
+
   const [q, setQ] = useState("");
   const [onlyEmail, setOnlyEmail] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Group | null>(null);
-  const [cols, setCols] = useState<Set<string>>(new Set(ALL_COLUMNS.map((c) => c.id)));
+  const [cols, setCols] = useState<Set<string>>(new Set(ALL_COLUMN_IDS));
   const [colsOpen, setColsOpen] = useState(false);
   const colsRef = useRef<HTMLDivElement>(null);
   const [bulkStatus, setBulkStatus] = useState("");
+  const [excludeInvalid, setExcludeInvalid] = useState(true);
+  const [verifyStatus, setVerifyStatus] = useState("");
 
   useEffect(() => {
     try {
@@ -320,6 +332,10 @@ export default function LeadsTable({
     [allGroups]
   );
   const shownContacts = filtered.reduce((n, g) => n + g.contacts.length, 0);
+  const unverifiedCount = filtered.reduce(
+    (n, g) => n + g.contacts.filter((c) => c.email && !c.email_verification_status).length,
+    0
+  );
   const selectedGroups = filtered.filter((g) => selected.has(g.key));
   const selectedContacts = selectedGroups.reduce((n, g) => n + g.contacts.length, 0);
 
@@ -352,8 +368,8 @@ export default function LeadsTable({
   }
 
   async function blockSelected() {
-    if (!confirm(`${selectedGroups.length} Firmen auf die Blockliste setzen? Sie verschwinden aus allen Ansichten und werden nie mehr recherchiert.`)) return;
-    setBulkStatus("Blockiere...");
+    if (!confirm(L.bulkBlockConfirm(selectedGroups.length))) return;
+    setBulkStatus(L.bulkBlocking);
     const supabase = createClient();
     const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
     if (!ws) return;
@@ -372,13 +388,33 @@ export default function LeadsTable({
     router.refresh();
   }
 
+  async function verifyEmails(groups: Group[]) {
+    const ids = groups.flatMap((g) =>
+      g.contacts.filter((c) => c.email && !c.email_verification_status).map((c) => c.id)
+    );
+    if (ids.length === 0) return;
+    setVerifyStatus(`${L.verifying} ${ids.length}...`);
+    const res = await fetch("/api/verify-emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contact_ids: ids }),
+    });
+    const body = await res.json();
+    setVerifyStatus(
+      res.ok
+        ? `${body.checked} ${L.verifyChecked} · ${body.valid} ${L.verifyValid} · ${body.invalid} ${L.verifyInvalid}`
+        : t.common.error + body.error
+    );
+    router.refresh();
+  }
+
   const forceOpen = q.length > 0;
   const activeChips: { label: string; clear: () => void }[] = [];
   if (searchFilter) {
     const s = searches?.find((x) => x.id === searchFilter);
-    activeChips.push({ label: "Suche: " + (s?.query ?? "…"), clear: () => setSearchFilter("") });
+    activeChips.push({ label: L.searchFilterPrefix + (s?.query ?? "…"), clear: () => setSearchFilter("") });
   }
-  if (onlyEmail) activeChips.push({ label: "Nur mit E-Mail", clear: () => setOnlyEmail(false) });
+  if (onlyEmail) activeChips.push({ label: L.onlyWithEmail, clear: () => setOnlyEmail(false) });
   if (q) activeChips.push({ label: '"' + q + '"', clear: () => setQ("") });
 
   return (
@@ -390,7 +426,7 @@ export default function LeadsTable({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filtern nach Firma, Name, E-Mail..."
+              placeholder={L.searchPlaceholder}
               className="w-full rounded-lg border border-edge2 bg-field py-2 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-indigo-500"
             />
           </div>
@@ -400,7 +436,7 @@ export default function LeadsTable({
               onChange={(e) => setSearchFilter(e.target.value)}
               className="rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-indigo-500"
             >
-              <option value="">Alle Suchen</option>
+              <option value="">{L.allSearches}</option>
               {searches.map((s) => (
                 <option key={s.id} value={s.id}>{s.query} — {s.location}</option>
               ))}
@@ -413,14 +449,34 @@ export default function LeadsTable({
               onChange={(e) => setOnlyEmail(e.target.checked)}
               className="h-4 w-4 rounded accent-indigo-500"
             />
-            Nur mit E-Mail
+            {L.onlyWithEmail}
           </label>
+          <label
+            className="flex cursor-pointer items-center gap-2 text-sm text-soft"
+            title={L.excludeInvalidExportTitle}
+          >
+            <input
+              type="checkbox"
+              checked={excludeInvalid}
+              onChange={(e) => setExcludeInvalid(e.target.checked)}
+              className="h-4 w-4 rounded accent-indigo-500"
+            />
+            {L.excludeInvalidExport}
+          </label>
+          <button
+            onClick={() => verifyEmails(filtered)}
+            disabled={unverifiedCount === 0}
+            title={L.verifyEmailsTitle}
+            className="rounded-lg border border-edge2 px-3 py-2 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
+          >
+            {L.verifyEmails}{unverifiedCount > 0 ? ` (${unverifiedCount})` : ""}
+          </button>
           <div className="relative" ref={colsRef}>
             <button
               onClick={() => setColsOpen(!colsOpen)}
               className="rounded-lg border border-edge2 px-3 py-2 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink"
             >
-              Spalten
+              {L.columns}
             </button>
             {colsOpen && (
               <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-edge/60 bg-panel p-2 shadow-2xl">
@@ -439,22 +495,23 @@ export default function LeadsTable({
             )}
           </div>
           <span className="text-xs text-faint">
-            {filtered.length} Firmen · {shownContacts} von {totalContacts} Kontakten
+            {L.countSummary(filtered.length, shownContacts, totalContacts)}
           </span>
+          {verifyStatus && <span className="text-xs text-faint">{verifyStatus}</span>}
           <button
-            onClick={() => download(toInstantlyCsv(filtered), "-instantly.csv")}
+            onClick={() => download(toInstantlyCsv(withoutInvalidEmails(filtered, excludeInvalid)), "-instantly.csv")}
             disabled={shownContacts === 0}
-            title="Spalten exakt für Instantlys CSV-Import benannt"
+            title={L.exportInstantlyTitle}
             className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
           >
-            Für Instantly exportieren
+            {L.exportInstantly}
           </button>
           <button
-            onClick={() => download(toCsv(filtered), ".csv")}
+            onClick={() => download(toCsv(withoutInvalidEmails(filtered, excludeInvalid), L.csvHeaders), ".csv")}
             disabled={shownContacts === 0}
             className="rounded-lg border border-edge2 px-3 py-1.5 text-xs font-medium text-soft transition-colors hover:border-edge3 hover:text-ink disabled:opacity-40"
           >
-            Excel-CSV
+            {L.exportExcel}
           </button>
         </div>
 
@@ -508,16 +565,21 @@ export default function LeadsTable({
                     </span>
                   </button>
                   <span className="shrink-0 text-xs text-faint">
-                    {g.contacts.length} {g.contacts.length === 1 ? "Kontakt" : "Kontakte"}
+                    {g.contacts.length} {g.contacts.length === 1 ? L.contactSingular : L.contactPlural}
                     {" · "}
                     <span className={withEmail > 0 ? "text-emerald-600 dark:text-emerald-400" : ""}>
-                      {withEmail} mit E-Mail
+                      {withEmail} {L.withEmail}
                     </span>
                   </span>
                 </div>
 
                 {isOpen && (
                   <div className="border-t border-edge/60 bg-surface/60 px-4 pb-4 pt-3">
+                    {g.company_summary && (
+                      <p className="mb-2 max-w-3xl text-xs leading-relaxed text-faint">
+                        {g.company_summary}
+                      </p>
+                    )}
                     {g.personalization && (
                       <p className="mb-3 max-w-3xl border-l-2 border-indigo-500/40 pl-3 text-xs italic leading-relaxed text-soft">
                         {g.personalization}
@@ -526,16 +588,16 @@ export default function LeadsTable({
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-xs text-mute">
-                          <th className="py-1.5 pr-4 font-medium">Person</th>
-                          {cols.has("title") && <th className="py-1.5 pr-4 font-medium">Position</th>}
-                          {cols.has("email") && <th className="py-1.5 pr-4 font-medium">E-Mail</th>}
-                          {cols.has("phone") && <th className="py-1.5 pr-4 font-medium">Telefon</th>}
-                          {cols.has("sources") && <th className="py-1.5 font-medium">Quellen</th>}
+                          <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.person}</th>
+                          {cols.has("title") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.title}</th>}
+                          {cols.has("email") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.email}</th>}
+                          {cols.has("phone") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.phone}</th>}
+                          {cols.has("sources") && <th className="py-1.5 font-medium">{L.tableHeaders.sources}</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {g.contacts.map((c) => (
-                          <tr key={c.id} className="border-t border-edge/60/60">
+                          <tr key={c.id} className="border-t border-edge/60">
                             <td className="py-2 pr-4 text-ink">
                               {c.linkedin ? (
                                 <a href={c.linkedin} target="_blank"
@@ -551,7 +613,7 @@ export default function LeadsTable({
                               <td className="py-2 pr-4">
                                 {c.email ? (
                                   <span className="flex items-center gap-1.5 text-ink">
-                                    <VerificationShield c={c} />
+                                    <VerificationShield c={c} t={L} />
                                     {c.email}
                                   </span>
                                 ) : (
@@ -569,7 +631,7 @@ export default function LeadsTable({
                                 <span className="flex gap-1">
                                   {c.sources.map((s) => (
                                     <span key={s} className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-soft">
-                                      {SOURCE_LABEL[s] ?? s}
+                                      {t.common.sourceLabels[s] ?? s}
                                     </span>
                                   ))}
                                 </span>
@@ -585,7 +647,7 @@ export default function LeadsTable({
             );
           })}
           {filtered.length === 0 && (
-            <p className="px-4 py-10 text-center text-faint">Keine Leads gefunden.</p>
+            <p className="px-4 py-10 text-center text-faint">{L.noLeadsFound}</p>
           )}
         </div>
       </section>
@@ -595,32 +657,32 @@ export default function LeadsTable({
         <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 md:left-[calc(50%+7.5rem)]">
           <div className="fade-up flex items-center gap-3 rounded-lg border border-edge/60 bg-panel px-4 py-3 shadow-2xl">
             <span className="text-sm text-ink">
-              <span className="font-semibold">{selectedGroups.length}</span> Firmen ·{" "}
-              {selectedContacts} Kontakte
+              <span className="font-semibold">{selectedGroups.length}</span> {L.bulkCompanies} ·{" "}
+              {selectedContacts} {L.bulkContacts}
             </span>
             <button
-              onClick={() => download(toInstantlyCsv(selectedGroups), "-auswahl-instantly.csv")}
+              onClick={() => download(toInstantlyCsv(withoutInvalidEmails(selectedGroups, excludeInvalid)), "-auswahl-instantly.csv")}
               className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:brightness-110 active:scale-[0.98]"
             >
-              Für Instantly
+              {L.bulkExportInstantly}
             </button>
             <button
-              onClick={() => download(toCsv(selectedGroups), "-auswahl.csv")}
+              onClick={() => download(toCsv(withoutInvalidEmails(selectedGroups, excludeInvalid), L.csvHeaders), "-auswahl.csv")}
               className="rounded-lg border border-edge2 px-3 py-1.5 text-xs text-soft transition-colors hover:border-edge3 hover:text-ink"
             >
-              Excel-CSV
+              {L.bulkExportExcel}
             </button>
             <button
               onClick={blockSelected}
               className="rounded-lg border border-red-300 px-3 py-1.5 text-xs text-red-600 transition-colors hover:border-red-500 dark:border-red-900/60 dark:text-red-400"
             >
-              {bulkStatus || "Blockieren"}
+              {bulkStatus || L.bulkBlock}
             </button>
             <button
               onClick={() => setSelected(new Set())}
               className="text-xs text-faint hover:text-ink"
             >
-              Abwählen
+              {L.deselect}
             </button>
           </div>
         </div>
@@ -659,32 +721,43 @@ export default function LeadsTable({
               </div>
             )}
 
+            {drawer.company_summary && (
+              <>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
+                  {L.companySummaryHeading}
+                </p>
+                <p className="mb-5 rounded-lg border border-edge/60 bg-surface/60 p-3 text-sm leading-relaxed text-soft">
+                  {drawer.company_summary}
+                </p>
+              </>
+            )}
+
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
-              Anreicherungs-Pipeline
+              {L.pipeline}
             </p>
             <div className="mb-5">
-              <PipelineStep label="Firma gefunden" state="done" detail={drawer.website ? "Website erkannt" : "Ohne Website"} />
+              <PipelineStep label={L.pipelineFound} state="done" detail={drawer.website ? L.pipelineFoundWebsite : L.pipelineFoundNoWebsite} />
               <PipelineStep
-                label="KI-Entscheider-Recherche"
+                label={L.pipelineDecisionmaker}
                 state={statusToState(drawer.decisionmaker_status)}
-                detail={drawer.decisionmaker_status === "found" ? "Entscheider identifiziert" : drawer.decisionmaker_status === "not_found" ? "Keine Personen öffentlich auffindbar" : undefined}
+                detail={drawer.decisionmaker_status === "found" ? L.pipelineDecisionmakerFound : drawer.decisionmaker_status === "not_found" ? L.pipelineDecisionmakerNotFound : undefined}
               />
               <PipelineStep
-                label="Hunter E-Mail-Verifizierung"
+                label={L.pipelineHunter}
                 state={drawer.website ? statusToState(drawer.hunter_status) : "empty"}
-                detail={!drawer.website ? "Übersprungen (keine Website)" : drawer.hunter_status === "not_found" ? "Keine Datenbank-Treffer" : undefined}
+                detail={!drawer.website ? L.pipelineHunterSkipped : drawer.hunter_status === "not_found" ? L.pipelineHunterNotFound : undefined}
               />
               <PipelineStep
-                label="KI-Personalisierung"
+                label={L.pipelinePersonalize}
                 state={drawer.personalization ? "done" : drawer.website ? "pending" : "empty"}
-                detail={drawer.personalization ? "Eröffnungszeile generiert" : undefined}
+                detail={drawer.personalization ? L.pipelinePersonalizeDone : undefined}
               />
             </div>
 
             {drawer.personalization && (
               <>
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
-                  Personalisierung
+                  {L.personalizationHeading}
                 </p>
                 <p className="mb-5 rounded-lg border-l-2 border-indigo-500/50 bg-indigo-500/5 p-3 text-sm italic leading-relaxed text-soft">
                   {drawer.personalization}
@@ -693,7 +766,7 @@ export default function LeadsTable({
             )}
 
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
-              Kontakte ({drawer.contacts.length})
+              {L.contactsHeading(drawer.contacts.length)}
             </p>
             <div className="space-y-2">
               {drawer.contacts.map((c) => (
@@ -703,7 +776,7 @@ export default function LeadsTable({
                     <span className="flex gap-1">
                       {c.sources.map((s) => (
                         <span key={s} className="rounded-full border border-edge2 bg-chip px-1.5 py-0.5 text-[10px] text-soft">
-                          {SOURCE_LABEL[s] ?? s}
+                          {t.common.sourceLabels[s] ?? s}
                         </span>
                       ))}
                     </span>
@@ -712,14 +785,14 @@ export default function LeadsTable({
                   <div className="mt-1.5 space-y-0.5 text-xs text-soft">
                     {c.email && (
                       <p className="flex items-center gap-1.5">
-                        <VerificationShield c={c} /> {c.email}
+                        <VerificationShield c={c} t={L} /> {c.email}
                       </p>
                     )}
                     {c.phone && <p>{c.phone}</p>}
                     {c.linkedin && (
                       <a href={c.linkedin} target="_blank"
                         className="text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-300">
-                        LinkedIn-Profil →
+                        {L.linkedinProfile}
                       </a>
                     )}
                   </div>

@@ -2,15 +2,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { IconLock } from "../icons";
+import { useT } from "../language-provider";
 
-const PROVIDERS = [
-  { id: "google_maps", label: "Google Maps", hint: "Geocoding API + Places API (New) aktivieren" },
-  { id: "openai", label: "OpenAI", hint: "Key beginnt mit sk-" },
-  { id: "hunter", label: "Hunter.io", hint: "Für E-Mail-Suche nach Entscheidern" },
-];
-
-const PROMPT_PLACEHOLDER =
-  'z.B.: Menschlich und locker, wie von Mensch zu Mensch. Beispiel: "Hey, hab gesehen du arbeitest mit Tieren - ich hab 10 Jahre in dem Bereich gearbeitet und kenn das genau, dachte ich schreib dir mal."';
+const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const;
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3 py-2 text-sm text-ink " +
@@ -21,12 +15,10 @@ const btnCls =
   "shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50";
 
 export default function SettingsPage() {
+  const { t } = useT();
   const [saved, setSaved] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
-  const [wsId, setWsId] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
-  const [promptStatus, setPromptStatus] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -34,28 +26,7 @@ export default function SettingsPage() {
       .from("api_keys")
       .select("provider")
       .then(({ data }) => setSaved((data ?? []).map((r) => r.provider)));
-    supabase
-      .from("workspaces")
-      .select("id, personalization_prompt")
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setWsId(data.id);
-          setPrompt(data.personalization_prompt ?? "");
-        }
-      });
   }, []);
-
-  async function savePrompt() {
-    if (!wsId) return;
-    setPromptStatus("...");
-    const { error } = await createClient()
-      .from("workspaces")
-      .update({ personalization_prompt: prompt.trim() || null })
-      .eq("id", wsId);
-    setPromptStatus(error ? "Fehler: " + error.message : "Gespeichert ✓");
-  }
 
   async function save(provider: string) {
     const key = values[provider];
@@ -67,77 +38,60 @@ export default function SettingsPage() {
       body: JSON.stringify({ provider, key }),
     });
     if (res.ok) {
-      setStatus((s) => ({ ...s, [provider]: "AES-128 (Fernet) verschlüsselt gespeichert" }));
+      setStatus((s) => ({ ...s, [provider]: t.settings.encryptedOk }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
       setValues((v) => ({ ...v, [provider]: "" }));
     } else {
       const body = await res.json().catch(() => ({}));
-      setStatus((s) => ({ ...s, [provider]: "Fehler: " + (body.error ?? res.status) }));
+      setStatus((s) => ({ ...s, [provider]: t.common.error + (body.error ?? res.status) }));
     }
   }
+
+  const providerLabels: Record<string, string> = {
+    google_maps: "Google Maps", openai: "OpenAI", hunter: "Hunter.io", neverbounce: "NeverBounce",
+  };
 
   return (
     <div className="fade-up max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">Einstellungen</h1>
-        <p className="text-sm text-faint">API-Keys und Personalisierungs-Stil</p>
-      </div>
-
-      <div className="rounded-lg border border-edge/60 bg-panel p-6">
-        <h2 className="font-medium text-ink">Personalisierungs-Stil</h2>
-        <p className="mb-4 mt-1 text-sm text-faint">
-          Beschreibe, wie die personalisierte Eröffnungszeile klingen soll — gerne mit Beispiel.
-          Leer lassen für den Standard-Stil (1 sachlicher Satz).
-        </p>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={PROMPT_PLACEHOLDER}
-          rows={5}
-          className={inputCls + " w-full resize-y"}
-        />
-        <div className="mt-3 flex items-center gap-3">
-          <button onClick={savePrompt} className={btnCls}>Speichern</button>
-          {promptStatus && <span className="text-xs text-faint">{promptStatus}</span>}
-        </div>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">{t.settings.title}</h1>
+        <p className="text-sm text-faint">{t.settings.subtitle}</p>
       </div>
 
       <div>
         <h2 className="mb-1 flex items-center gap-1.5 font-medium text-ink">
           <IconLock className="h-4 w-4 text-mute" filled />
-          API-Keys
+          {t.settings.apiKeysHeading}
         </h2>
-        <p className="mb-4 text-sm text-faint">
-          Deine Keys werden serverseitig verschlüsselt (AES-128, Fernet) gespeichert und nie im Klartext angezeigt.
-        </p>
+        <p className="mb-4 text-sm text-faint">{t.settings.apiKeysDescription}</p>
         <div className="space-y-4">
-          {PROVIDERS.map((p) => (
-            <div key={p.id} className="rounded-lg border border-edge/60 bg-panel p-6">
+          {PROVIDER_IDS.map((p) => (
+            <div key={p} className="rounded-lg border border-edge/60 bg-panel p-6">
               <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-medium text-ink">{p.label}</h3>
-                {saved.includes(p.id) && (
+                <h3 className="font-medium text-ink">{providerLabels[p]}</h3>
+                {saved.includes(p) && (
                   <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    hinterlegt
+                    {t.settings.saved}
                   </span>
                 )}
               </div>
-              <p className="mb-3 text-xs text-faint">{p.hint}</p>
+              <p className="mb-3 text-xs text-faint">{t.settings.providerHints[p]}</p>
               <div className="flex gap-3">
                 <input
                   type="password"
-                  placeholder={saved.includes(p.id) ? "Neuen Key eingeben zum Ersetzen" : "API-Key"}
-                  value={values[p.id] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
+                  placeholder={saved.includes(p) ? t.settings.replaceKeyPlaceholder : t.settings.keyPlaceholder}
+                  value={values[p] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [p]: e.target.value }))}
                   className={inputCls + " flex-1"}
                 />
-                <button onClick={() => save(p.id)} className={btnCls}>Speichern</button>
+                <button onClick={() => save(p)} className={btnCls}>{t.settings.save}</button>
               </div>
-              {status[p.id] && (
+              {status[p] && (
                 <p
                   className={
                     "mt-2 flex items-center gap-1.5 text-xs " +
-                    (status[p.id].includes("verschlüsselt")
+                    (status[p].includes(t.settings.encryptedOk)
                       ? "lock-pop font-medium text-emerald-600 dark:text-emerald-400"
                       : "text-faint")
                   }
@@ -145,15 +99,15 @@ export default function SettingsPage() {
                   <IconLock
                     className={
                       "h-3.5 w-3.5 " +
-                      (status[p.id] === "..."
+                      (status[p] === "..."
                         ? "lock-spin text-mute"
-                        : status[p.id].includes("verschlüsselt")
+                        : status[p].includes(t.settings.encryptedOk)
                         ? "text-emerald-500"
                         : "text-mute")
                     }
-                    filled={status[p.id].includes("verschlüsselt")}
+                    filled={status[p].includes(t.settings.encryptedOk)}
                   />
-                  {status[p.id] === "..." ? "Wird verschlüsselt…" : status[p.id]}
+                  {status[p] === "..." ? t.settings.encrypting : status[p]}
                 </p>
               )}
             </div>
@@ -162,27 +116,16 @@ export default function SettingsPage() {
       </div>
 
       <div className="rounded-lg border border-edge/60 bg-panel p-6">
-        <h2 className="font-medium text-ink">Kompatibel mit deinem Stack</h2>
-        <p className="mb-4 mt-1 text-sm text-faint">
-          Exportiere Leads mit einem Klick — die Spalten sind für den Direkt-Import vorbereitet.
-        </p>
+        <h2 className="font-medium text-ink">{t.settings.stackHeading}</h2>
+        <p className="mb-4 mt-1 text-sm text-faint">{t.settings.stackDescription}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {[
-            { name: "Instantly", note: "CSV-Import, Auto-Mapping" },
-            { name: "Smartlead", note: "CSV-Import" },
-            { name: "Lemlist", note: "CSV-Import" },
-            { name: "HubSpot", note: "CSV-Import" },
-            { name: "Pipedrive", note: "CSV-Import" },
-            { name: "Salesforce", note: "CSV-Import" },
-            { name: "Excel / Sheets", note: "Excel-CSV" },
-            { name: "Zapier", note: "geplant" },
-          ].map((t) => (
+          {t.settings.integrations.map((it) => (
             <div
-              key={t.name}
-              className="rounded-lg border border-edge/60 bg-surface/60 px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-edge2"
+              key={it.name}
+              className="rounded-lg border border-edge bg-surface/60 px-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-edge2"
             >
-              <p className="text-sm font-medium text-ink">{t.name}</p>
-              <p className="text-[11px] text-faint">{t.note}</p>
+              <p className="text-sm font-medium text-ink">{it.name}</p>
+              <p className="text-[11px] text-faint">{it.note}</p>
             </div>
           ))}
         </div>

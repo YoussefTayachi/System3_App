@@ -2,9 +2,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "../language-provider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export default function LoginPage() {
     const { error } = await createClient().auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError("Login fehlgeschlagen: " + error.message);
+      setError(t.login.failed + error.message);
       return;
     }
     router.push("/");
@@ -33,20 +35,20 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-base font-semibold tracking-tight text-ink">System3</h1>
-            <p className="text-xs text-faint">Leads finden · anreichern · personalisieren</p>
+            <p className="text-xs text-faint">{t.login.tagline}</p>
           </div>
         </div>
 
         <div className="rounded-lg border border-edge/60 bg-panel p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-medium text-ink">Anmelden</h2>
+          <h2 className="mb-4 text-sm font-medium text-ink">{t.login.heading}</h2>
           <form onSubmit={onSubmit} className="space-y-3">
             <input
-              type="email" required placeholder="E-Mail" value={email}
+              type="email" required placeholder={t.login.emailPlaceholder} value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-edge2 bg-field px-3 py-2.5 text-sm text-ink placeholder-mute outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/5"
             />
             <input
-              type="password" required placeholder="Passwort" value={password}
+              type="password" required placeholder={t.login.passwordPlaceholder} value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-edge2 bg-field px-3 py-2.5 text-sm text-ink placeholder-mute outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/5"
             />
@@ -55,13 +57,11 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-50"
             >
-              {loading ? "Wird angemeldet..." : "Anmelden"}
+              {loading ? t.login.submitting : t.login.submit}
             </button>
           </form>
         </div>
-        <p className="mt-5 text-center text-xs text-mute">
-          B2B Lead-Engine — DSGVO-first · BYOK · EU-Hosting
-        </p>
+        <p className="mt-5 text-center text-xs text-mute">{t.login.footer}</p>
       </div>
     </div>
   );

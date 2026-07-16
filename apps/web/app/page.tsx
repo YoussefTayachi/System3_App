@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getLangServer, formatDate } from "@/lib/i18n/lang";
+import { dict } from "@/lib/i18n/dict";
 import NewSearchForm from "./new-search-form";
 import AutoRefresh from "./auto-refresh";
 import ActivityChart from "./activity-chart";
 import CountUp from "./count-up";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Wartet",
-  running: "Läuft",
-  completed: "Fertig",
-  failed: "Fehler",
-};
 
 type Stats = {
   searches_total: number;
@@ -44,6 +39,8 @@ function estimateRoi(s: Stats) {
 }
 
 export default async function Dashboard() {
+  const lang = await getLangServer();
+  const t = dict[lang];
   const supabase = await createClient();
   const [statsRes, searchesRes, wsRes, recentRes] = await Promise.all([
     supabase.rpc("dashboard_stats"),
@@ -68,12 +65,12 @@ export default async function Dashboard() {
   const hasActive = (stats.jobs_active ?? 0) > 0;
 
   const kpis: { label: string; value: number | string; sub?: string }[] = [
-    { label: "Suchen", value: stats.searches_total ?? 0 },
-    { label: "Firmen", value: stats.businesses_total ?? 0 },
-    { label: "Kontakte", value: stats.contacts_total ?? 0 },
-    { label: "Mit E-Mail", value: stats.contacts_with_email ?? 0 },
-    { label: "Personalisiert", value: stats.personalized ?? 0 },
-    { label: "API-Kosten", value: "$" + costs.usd.toFixed(2), sub: costs.hunterCredits + " Hunter-Credits" },
+    { label: t.dashboard.kpis.searches, value: stats.searches_total ?? 0 },
+    { label: t.dashboard.kpis.businesses, value: stats.businesses_total ?? 0 },
+    { label: t.dashboard.kpis.contacts, value: stats.contacts_total ?? 0 },
+    { label: t.dashboard.kpis.withEmail, value: stats.contacts_with_email ?? 0 },
+    { label: t.dashboard.kpis.personalized, value: stats.personalized ?? 0 },
+    { label: t.dashboard.kpis.apiCosts, value: "$" + costs.usd.toFixed(2), sub: costs.hunterCredits + " " + t.dashboard.hunterCredits },
   ];
 
   return (
@@ -81,14 +78,14 @@ export default async function Dashboard() {
       {hasActive && <AutoRefresh />}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Dashboard</h1>
-          <p className="text-[13px] text-faint">Überblick über deine Lead-Pipeline</p>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">{t.dashboard.title}</h1>
+          <p className="text-[13px] text-faint">{t.dashboard.subtitle}</p>
         </div>
         {hasActive && (
           <div className="flex flex-col items-end gap-1.5">
             <span className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-              {stats.jobs_active} Agenten arbeiten
+              {stats.jobs_active} {t.dashboard.agentsWorking}
             </span>
             <div className="h-1 w-36 overflow-hidden rounded-full bg-chip">
               <div className="h-full w-1/3 animate-[slide_1.4s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
@@ -98,7 +95,7 @@ export default async function Dashboard() {
       </div>
 
       {/* KPI-Leiste */}
-      <div className="grid grid-cols-3 divide-edge/60 overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm md:grid-cols-6 md:divide-x">
+      <div className="grid grid-cols-3 divide-edge overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm md:grid-cols-6 md:divide-x">
         {kpis.map((k) => (
           <div key={k.label} className="px-4 py-3.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{k.label}</p>
@@ -117,11 +114,11 @@ export default async function Dashboard() {
             <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
           </svg>
           <p className="text-sm text-ink">
-            <span className="font-semibold">≈ {roi.hours} Stunden</span> manuelle Recherche gespart
+            <span className="font-semibold">≈ {roi.hours} {t.dashboard.roiHours}</span> {t.dashboard.roiSaved}
           </p>
           <p className="text-sm text-soft">
-            · entspricht <span className="font-medium text-emerald-600 dark:text-emerald-400">~{roi.value} €</span> Personalkosten
-            — bei <span className="font-medium text-ink">${costs.usd.toFixed(2)}</span> API-Kosten
+            · {t.dashboard.roiEquals} <span className="font-medium text-emerald-600 dark:text-emerald-400">~{roi.value} €</span> {t.dashboard.roiLaborCost}
+            {" — "}{t.dashboard.roiAt} <span className="font-medium text-ink">${costs.usd.toFixed(2)}</span> {t.dashboard.roiApiCosts}
           </p>
         </div>
       )}
@@ -130,17 +127,17 @@ export default async function Dashboard() {
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-ink">Neue Leads — letzte 14 Tage</h2>
+            <h2 className="text-sm font-medium text-ink">{t.dashboard.chartTitle}</h2>
             <span className="text-xs text-mute">
-              {stats.emails_sent ?? 0} E-Mails gesendet · {stats.replies ?? 0} Antworten
+              {stats.emails_sent ?? 0} {t.dashboard.emailsSent} · {stats.replies ?? 0} {t.dashboard.replies}
             </span>
           </div>
           <ActivityChart data={stats.activity ?? []} />
         </div>
         <div className="overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between border-b border-edge/60 px-4 py-3">
-            <h2 className="text-sm font-medium text-ink">Neueste Leads</h2>
-            <Link href="/leads" className="text-xs text-faint hover:text-ink">Alle →</Link>
+            <h2 className="text-sm font-medium text-ink">{t.dashboard.recentLeads}</h2>
+            <Link href="/leads" className="text-xs text-faint hover:text-ink">{t.dashboard.all}</Link>
           </div>
           <div className="divide-y divide-edge/60">
             {recent.map((c) => (
@@ -161,7 +158,7 @@ export default async function Dashboard() {
               </div>
             ))}
             {recent.length === 0 && (
-              <p className="px-4 py-8 text-center text-sm text-mute">Noch keine Leads.</p>
+              <p className="px-4 py-8 text-center text-sm text-mute">{t.dashboard.noLeadsYet}</p>
             )}
           </div>
         </div>
@@ -169,30 +166,26 @@ export default async function Dashboard() {
 
       {/* Neue Suche */}
       <section className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-medium text-ink">Neue Suche</h2>
-        <p className="mb-4 text-[13px] text-faint">
-          Nische + Ort eingeben — Firmen, Entscheider, E-Mails und Personalisierung laufen automatisch.
-        </p>
+        <h2 className="mb-1 text-sm font-medium text-ink">{t.dashboard.newSearch}</h2>
+        <p className="mb-4 text-[13px] text-faint">{t.dashboard.newSearchHint}</p>
         {wsRes.data ? <NewSearchForm workspaceId={wsRes.data.id} /> : null}
       </section>
 
       {/* Letzte Suchen */}
       <section className="overflow-hidden rounded-lg border border-edge/60 bg-panel shadow-sm">
         <div className="flex items-center justify-between border-b border-edge/60 px-5 py-3">
-          <h2 className="text-sm font-medium text-ink">Letzte Suchen</h2>
-          <Link href="/searches" className="text-xs text-faint hover:text-ink">
-            Alle anzeigen →
-          </Link>
+          <h2 className="text-sm font-medium text-ink">{t.dashboard.recentSearches}</h2>
+          <Link href="/searches" className="text-xs text-faint hover:text-ink">{t.dashboard.showAll}</Link>
         </div>
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-edge/60 text-left text-xs text-mute">
-              <th className="px-5 py-2 font-medium">Liste</th>
-              <th className="px-5 py-2 font-medium">Quelle</th>
-              <th className="px-5 py-2 font-medium">Ort</th>
-              <th className="px-5 py-2 font-medium">Max</th>
-              <th className="px-5 py-2 font-medium">Status</th>
-              <th className="px-5 py-2 font-medium">Erstellt</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.list}</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.source}</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.location}</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.max}</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.status}</th>
+              <th className="px-5 py-2 font-medium">{t.dashboard.table.created}</th>
             </tr>
           </thead>
           <tbody>
@@ -204,23 +197,19 @@ export default async function Dashboard() {
                   </Link>
                 </td>
                 <td className="px-5 py-2.5">
-                  <span className="rounded-md border border-edge/60 bg-chip px-1.5 py-0.5 text-[11px] text-soft">
+                  <span className="rounded-md border border-edge2 bg-chip px-1.5 py-0.5 text-[11px] text-soft">
                     {s.source === "corporate" ? "Corporate" : "Maps"}
                   </span>
                 </td>
                 <td className="px-5 py-2.5 text-soft">{s.location}</td>
                 <td className="px-5 py-2.5 text-soft">{s.max_results}</td>
-                <td className="px-5 py-2.5"><StatusBadge status={s.status} /></td>
-                <td className="px-5 py-2.5 text-faint">
-                  {new Date(s.created_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}
-                </td>
+                <td className="px-5 py-2.5"><StatusBadge status={s.status} labels={t.common.statusLabels} /></td>
+                <td className="px-5 py-2.5 text-faint">{formatDate(s.created_at, lang)}</td>
               </tr>
             ))}
             {searches.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-mute">
-                  Noch keine Suchen — starte oben deine erste.
-                </td>
+                <td colSpan={6} className="px-5 py-8 text-center text-mute">{t.dashboard.noSearchesYet}</td>
               </tr>
             )}
           </tbody>
@@ -230,7 +219,7 @@ export default async function Dashboard() {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, labels }: { status: string; labels: Record<string, string> }) {
   const config: Record<string, { dot: string; text: string }> = {
     pending: { dot: "bg-amber-400", text: "text-amber-700 dark:text-amber-300" },
     running: { dot: "bg-blue-500 animate-pulse", text: "text-blue-700 dark:text-blue-300" },
@@ -241,7 +230,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span className={"inline-flex items-center gap-1.5 text-xs font-medium " + c.text}>
       <span className={"h-1.5 w-1.5 rounded-full " + c.dot} />
-      {STATUS_LABEL[status] ?? status}
+      {labels[status] ?? status}
     </span>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "./language-provider";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const { t } = useT();
   return (
     <button
       className="text-xs text-faint transition-colors hover:text-ink"
@@ -13,7 +15,7 @@ export default function LogoutButton() {
         router.refresh();
       }}
     >
-      Abmelden
+      {t.logout}
     </button>
   );
 }

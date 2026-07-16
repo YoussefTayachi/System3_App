@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "../language-provider";
 
 type Row = { id: string; email: string | null; domain: string | null; reason: string };
 
@@ -25,6 +26,7 @@ function parseInput(text: string): { emails: string[]; domains: string[] } {
 }
 
 export default function BlocklistPage() {
+  const { t } = useT();
   const [rows, setRows] = useState<Row[]>([]);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("");
@@ -53,10 +55,10 @@ export default function BlocklistPage() {
     if (!wsId) return;
     const { emails, domains } = parseInput(text);
     if (emails.length === 0 && domains.length === 0) {
-      setStatus("Keine gültigen E-Mails oder Domains erkannt.");
+      setStatus(t.blocklist.noValidEntries);
       return;
     }
-    setStatus("Speichere...");
+    setStatus(t.blocklist.saving);
     const supabase = createClient();
     const rowsToInsert = [
       ...emails.map((email) => ({ workspace_id: wsId, email, reason: "manual" })),
@@ -67,7 +69,7 @@ export default function BlocklistPage() {
         .from("suppression_list")
         .upsert(rowsToInsert.slice(i, i + 500), { onConflict: "workspace_id,email", ignoreDuplicates: true });
     }
-    setStatus(`${emails.length} E-Mails und ${domains.length} Domains blockiert.`);
+    setStatus(t.blocklist.blockedSummary(emails.length, domains.length));
     setInput("");
     reload();
   }
@@ -89,25 +91,20 @@ export default function BlocklistPage() {
   return (
     <div className="fade-up max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">Blockliste</h1>
-        <p className="text-sm text-faint">
-          Bestandskunden & bereits kontaktierte Leads — werden nie angezeigt, nie exportiert und
-          bei neuen Suchen gar nicht erst recherchiert.
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">{t.blocklist.title}</h1>
+        <p className="text-sm text-faint">{t.blocklist.subtitle}</p>
       </div>
 
       <div className="rounded-lg border border-edge/60 bg-panel p-6">
-        <h2 className="mb-1 font-medium text-ink">Einträge hinzufügen</h2>
+        <h2 className="mb-1 font-medium text-ink">{t.blocklist.addHeading}</h2>
         <p className="mb-3 text-xs text-faint">
-          E-Mails blockieren die Person, Domains (z.B. <span className="text-soft">kunde-gmbh.de</span>) die
-          ganze Firma. Einfach einfügen — eine pro Zeile oder mit Komma getrennt. CSV-Upload nimmt
-          automatisch alle enthaltenen E-Mail-Adressen.
+          {t.blocklist.addHint1} <span className="text-soft">kunde-gmbh.de</span>{t.blocklist.addHint2}
         </p>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           rows={5}
-          placeholder={"max@bestandskunde.de\nkunde-gmbh.at\ninfo@schon-kontaktiert.de"}
+          placeholder={t.blocklist.textareaPlaceholder}
           className="w-full rounded-lg border border-edge2 bg-field px-3 py-2 font-mono text-sm text-ink placeholder-mute outline-none focus:border-indigo-500"
         />
         <div className="mt-3 flex items-center gap-3">
@@ -115,10 +112,10 @@ export default function BlocklistPage() {
             onClick={() => addEntries(input)}
             className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98]"
           >
-            Blockieren
+            {t.blocklist.block}
           </button>
           <label className="cursor-pointer rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors hover:border-edge3 hover:text-ink">
-            CSV hochladen
+            {t.blocklist.uploadCsv}
             <input type="file" accept=".csv,.txt" onChange={onFile} className="hidden" />
           </label>
           {status && <span className="text-xs text-faint">{status}</span>}
@@ -127,7 +124,7 @@ export default function BlocklistPage() {
 
       <div className="overflow-hidden rounded-lg border border-edge/60 bg-panel">
         <h2 className="border-b border-edge/60 px-5 py-3 text-sm font-medium text-ink">
-          {rows.length} Einträge
+          {t.blocklist.entries(rows.length)}
         </h2>
         <div className="max-h-96 divide-y divide-edge/60 overflow-y-auto">
           {rows.map((r) => (
@@ -136,18 +133,18 @@ export default function BlocklistPage() {
                 {r.email ?? r.domain}
               </span>
               <span className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-faint">
-                {r.email ? "E-Mail" : "Domain"}
+                {r.email ? t.blocklist.emailBadge : t.blocklist.domainBadge}
               </span>
               <button
                 onClick={() => remove(r.id)}
                 className="text-xs text-mute transition-colors hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
               >
-                Entfernen
+                {t.blocklist.remove}
               </button>
             </div>
           ))}
           {rows.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-faint">Noch keine Einträge.</p>
+            <p className="px-5 py-8 text-center text-sm text-faint">{t.blocklist.noEntries}</p>
           )}
         </div>
       </div>

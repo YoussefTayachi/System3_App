@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "./language-provider";
 
 const INDUSTRIES = [
   "Insurance", "Financial Services", "Banking", "Accounting", "Legal Services",
@@ -12,12 +13,7 @@ const INDUSTRIES = [
   "Wellness and Fitness Services", "Restaurants", "Hospitality", "Retail", "Wholesale",
   "Automotive", "Telecommunications", "Education", "Utilities",
 ];
-const COUNTRIES = [
-  { code: "AT", label: "Österreich" }, { code: "DE", label: "Deutschland" },
-  { code: "CH", label: "Schweiz" }, { code: "GB", label: "UK" }, { code: "US", label: "USA" },
-  { code: "NL", label: "Niederlande" }, { code: "FR", label: "Frankreich" },
-  { code: "IT", label: "Italien" }, { code: "ES", label: "Spanien" },
-];
+const COUNTRY_CODES = ["AT", "DE", "CH", "GB", "US", "NL", "FR", "IT", "ES"];
 const HEADCOUNTS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"];
 
 const inputCls =
@@ -27,6 +23,7 @@ const labelCls = "flex flex-col text-xs font-medium text-soft";
 
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
+  const { t } = useT();
   const [mode, setMode] = useState<"maps" | "corporate">("maps");
   const [listName, setListName] = useState("");
   const [schedule, setSchedule] = useState("none");
@@ -90,47 +87,47 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="flex gap-1 rounded-lg border border-edge/60 bg-panel p-1 w-fit">
         <button type="button" className={tabCls(mode === "maps")} onClick={() => setMode("maps")}>
-          Lokal (Google Maps)
+          {t.newSearchForm.tabMaps}
         </button>
         <button type="button" className={tabCls(mode === "corporate")} onClick={() => setMode("corporate")}>
-          Corporate (Datenbank)
+          {t.newSearchForm.tabCorporate}
         </button>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className={labelCls + " min-w-52 flex-1"}>
-          Listen-Name (optional)
-          <input placeholder='z.B. "Makler Wien Q3"' value={listName}
+          {t.newSearchForm.listName}
+          <input placeholder={t.newSearchForm.listNamePlaceholder} value={listName}
             onChange={(e) => setListName(e.target.value)} className={inputCls} />
         </label>
         <label className={labelCls}>
-          Lead-Abo
+          {t.newSearchForm.subscription}
           <select value={schedule} onChange={(e) => setSchedule(e.target.value)} className={inputCls + " w-44"}>
-            <option value="none">Einmalig</option>
-            <option value="weekly">Wöchentlich neue Leads</option>
-            <option value="daily">Täglich neue Leads</option>
+            <option value="none">{t.newSearchForm.subscriptionOnce}</option>
+            <option value="weekly">{t.newSearchForm.subscriptionWeekly}</option>
+            <option value="daily">{t.newSearchForm.subscriptionDaily}</option>
           </select>
         </label>
       </div>
       {mode === "maps" ? (
         <div className="flex flex-wrap items-end gap-3">
           <label className={labelCls + " flex-1"}>
-            Nische
-            <input required placeholder="z.B. Zahnärzte" value={query}
+            {t.newSearchForm.niche}
+            <input required placeholder={t.newSearchForm.nichePlaceholder} value={query}
               onChange={(e) => setQuery(e.target.value)} className={inputCls} />
           </label>
           <label className={labelCls + " flex-1"}>
-            Ort
-            <input required placeholder="z.B. Wien" value={location}
+            {t.newSearchForm.location}
+            <input required placeholder={t.newSearchForm.locationPlaceholder} value={location}
               onChange={(e) => setLocation(e.target.value)} className={inputCls} />
           </label>
           <label className={labelCls}>
-            Max. Firmen
+            {t.newSearchForm.maxBusinesses}
             <input type="number" min={1} max={100} value={maxResults}
               onChange={(e) => setMaxResults(Number(e.target.value))} className={inputCls + " w-24"} />
           </label>
           <label className={labelCls}>
-            Radius (m)
+            {t.newSearchForm.radius}
             <input type="number" min={100} max={50000} step={100} value={radius}
               onChange={(e) => setRadius(Number(e.target.value))} className={inputCls + " w-28"} />
           </label>
@@ -139,37 +136,39 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <label className={labelCls + " min-w-44 flex-1"}>
-            Branche
+            {t.newSearchForm.industry}
             <select value={industry} onChange={(e) => setIndustry(e.target.value)} className={inputCls}>
-              <option value="">Alle Branchen</option>
+              <option value="">{t.newSearchForm.allIndustries}</option>
               {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </label>
           <label className={labelCls}>
-            Stadt (optional)
-            <input placeholder="z.B. Vienna" value={city}
+            {t.newSearchForm.city}
+            <input placeholder={t.newSearchForm.cityPlaceholder} value={city}
               onChange={(e) => setCity(e.target.value)} className={inputCls + " w-36"} />
           </label>
           <label className={labelCls}>
-            Land
+            {t.newSearchForm.country}
             <select value={country} onChange={(e) => setCountry(e.target.value)} className={inputCls + " w-36"}>
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+              {COUNTRY_CODES.map((code) => (
+                <option key={code} value={code}>{t.newSearchForm.countryLabels[code] ?? code}</option>
+              ))}
             </select>
           </label>
           <label className={labelCls}>
-            Größe
+            {t.newSearchForm.headcount}
             <select value={headcount} onChange={(e) => setHeadcount(e.target.value)} className={inputCls + " w-32"}>
-              <option value="">Alle</option>
+              <option value="">{t.newSearchForm.allHeadcounts}</option>
               {HEADCOUNTS.map((h) => <option key={h} value={h}>{h}</option>)}
             </select>
           </label>
           <label className={labelCls + " flex-1"}>
-            Keywords (optional, Komma-getrennt)
-            <input placeholder="z.B. makler, vorsorge" value={keywords}
+            {t.newSearchForm.keywords}
+            <input placeholder={t.newSearchForm.keywordsPlaceholder} value={keywords}
               onChange={(e) => setKeywords(e.target.value)} className={inputCls} />
           </label>
           <label className={labelCls}>
-            Max. Firmen
+            {t.newSearchForm.maxBusinesses}
             <input type="number" min={1} max={100} value={maxResults}
               onChange={(e) => setMaxResults(Number(e.target.value))} className={inputCls + " w-24"} />
           </label>
@@ -177,23 +176,20 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
         </div>
       )}
       {mode === "corporate" && (
-        <p className="text-xs text-mute">
-          Hinweis: Stadtnamen englisch eingeben (Vienna statt Wien). Die Firmensuche selbst ist bei
-          Hunter kostenlos — Credits fallen erst bei der E-Mail-Suche pro Firma an.
-        </p>
+        <p className="text-xs text-mute">{t.newSearchForm.corporateHint}</p>
       )}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </form>
   );
-}
 
-function SubmitButton({ loading }: { loading: boolean }) {
-  return (
-    <button
-      disabled={loading}
-      className="rounded-lg bg-ink px-5 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-50"
-    >
-      {loading ? "Wird gestartet..." : "Suche starten"}
-    </button>
-  );
+  function SubmitButton({ loading }: { loading: boolean }) {
+    return (
+      <button
+        disabled={loading}
+        className="rounded-lg bg-ink px-5 py-2 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.98] disabled:opacity-50"
+      >
+        {loading ? t.newSearchForm.starting : t.newSearchForm.start}
+      </button>
+    );
+  }
 }

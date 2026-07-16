@@ -1,9 +1,11 @@
 import "./globals.css";
 import "@fontsource-variable/inter";
 import { createClient } from "@/lib/supabase/server";
+import { getLangServer } from "@/lib/i18n/lang";
 import Nav from "./nav";
 import LogoutButton from "./logout-button";
 import ThemeToggle from "./theme-toggle";
+import { LanguageProvider, LanguageToggle } from "./language-provider";
 
 export const metadata = {
   title: "System3 — Lead-Gen & Outreach",
@@ -12,6 +14,7 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
+  const lang = await getLangServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -21,51 +24,58 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   if (!user) {
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang={lang} suppressHydrationWarning>
         <head>
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
-        <body>{children}</body>
+        <body>
+          <LanguageProvider lang={lang}>{children}</LanguageProvider>
+        </body>
       </html>
     );
   }
 
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <div className="flex min-h-screen">
-          <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-edge/60 bg-panel2 px-3 py-5 md:flex">
-            <div className="mb-6 flex items-center gap-2 px-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
-                3
+        <LanguageProvider lang={lang}>
+          <div className="flex min-h-screen">
+            <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-edge/60 bg-panel2 px-3 py-5 md:flex">
+              <div className="mb-6 flex items-center gap-2 px-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
+                  3
+                </div>
+                <span className="text-sm font-semibold tracking-tight text-ink">
+                  System3
+                </span>
               </div>
-              <span className="text-sm font-semibold tracking-tight text-ink">
-                System3
-              </span>
-            </div>
-            <Nav />
-            <div className="mt-auto border-t border-edge/60 pt-4">
-              <div className="flex items-center justify-between px-2">
-                <div className="min-w-0">
-                  <p className="truncate text-xs text-faint">{user.email}</p>
-                  <div className="pt-1">
-                    <LogoutButton />
+              <Nav />
+              <div className="mt-auto border-t border-edge/60 pt-4">
+                <div className="flex items-center justify-between px-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-faint">{user.email}</p>
+                    <div className="pt-1">
+                      <LogoutButton />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <LanguageToggle />
+                    <ThemeToggle />
                   </div>
                 </div>
-                <ThemeToggle />
               </div>
+            </aside>
+            <div className="min-w-0 flex-1 md:pl-56">
+              <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
+                <span className="font-semibold">System3</span>
+              </header>
+              <main className="mx-auto max-w-6xl px-8 py-7">{children}</main>
             </div>
-          </aside>
-          <div className="min-w-0 flex-1 md:pl-56">
-            <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
-              <span className="font-semibold">System3</span>
-            </header>
-            <main className="mx-auto max-w-6xl px-8 py-7">{children}</main>
           </div>
-        </div>
+        </LanguageProvider>
       </body>
     </html>
   );

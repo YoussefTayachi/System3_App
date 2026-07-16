@@ -1,21 +1,25 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconLeads, IconSearch, IconSettings, IconShield } from "./icons";
-
-const ITEMS = [
-  { href: "/", label: "Dashboard", icon: IconDashboard },
-  { href: "/searches", label: "Suchen", icon: IconSearch },
-  { href: "/leads", label: "Alle Leads", icon: IconLeads },
-  { href: "/blocklist", label: "Blockliste", icon: IconShield },
-  { href: "/settings", label: "Einstellungen", icon: IconSettings },
-];
+import { IconAgent, IconDashboard, IconLeads, IconSearch, IconSettings, IconShield } from "./icons";
+import { useT } from "./language-provider";
 
 export default function Nav() {
   const pathname = usePathname();
+  const { t } = useT();
+
+  const items = [
+    { href: "/", label: t.nav.dashboard, icon: IconDashboard },
+    { href: "/searches", label: t.nav.searches, icon: IconSearch },
+    { href: "/leads", label: t.nav.leads, icon: IconLeads },
+    { href: "/ai-agent", label: t.nav.aiAgent, icon: IconAgent },
+    { href: "/blocklist", label: t.nav.blocklist, icon: IconShield },
+    { href: "/settings", label: t.nav.settings, icon: IconSettings },
+  ];
+
   return (
     <nav className="flex flex-col gap-1">
-      {ITEMS.map(({ href, label, icon: Icon }) => {
+      {items.map(({ href, label, icon: Icon }) => {
         const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link

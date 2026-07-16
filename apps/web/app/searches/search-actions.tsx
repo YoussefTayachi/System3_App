@@ -1,12 +1,14 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "../language-provider";
 
 export function TrashButton({ searchId }: { searchId: string }) {
   const router = useRouter();
+  const { t } = useT();
   return (
     <button
-      title="In den Papierkorb"
+      title={t.searchActions.trashTitle}
       onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -18,13 +20,14 @@ export function TrashButton({ searchId }: { searchId: string }) {
       }}
       className="rounded-lg border border-edge/60 px-2.5 py-1.5 text-xs text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
     >
-      Löschen
+      {t.searchActions.delete}
     </button>
   );
 }
 
 export function RestoreButton({ searchId }: { searchId: string }) {
   const router = useRouter();
+  const { t } = useT();
   return (
     <button
       onClick={async () => {
@@ -33,17 +36,18 @@ export function RestoreButton({ searchId }: { searchId: string }) {
       }}
       className="rounded-lg border border-edge2 px-3 py-1.5 text-xs text-soft transition-colors hover:border-edge3 hover:text-ink"
     >
-      Wiederherstellen
+      {t.searchActions.restore}
     </button>
   );
 }
 
 export function HardDeleteButton({ searchId }: { searchId: string }) {
   const router = useRouter();
+  const { t } = useT();
   return (
     <button
       onClick={async () => {
-        if (!confirm("Liste und alle zugehörigen Leads endgültig löschen? Das kann nicht rückgängig gemacht werden.")) return;
+        if (!confirm(t.searchActions.hardDeleteConfirm)) return;
         const supabase = createClient();
         await supabase.from("businesses").delete().eq("search_id", searchId);
         await supabase.from("searches").delete().eq("id", searchId);
@@ -51,7 +55,7 @@ export function HardDeleteButton({ searchId }: { searchId: string }) {
       }}
       className="rounded-lg border border-red-300 dark:border-red-900/60 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 transition-colors hover:border-red-500 hover:text-red-500 dark:hover:text-red-500 dark:text-red-300"
     >
-      Endgültig löschen
+      {t.searchActions.hardDelete}
     </button>
   );
 }

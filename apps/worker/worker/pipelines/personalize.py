@@ -1,10 +1,15 @@
-"""Pipeline 4 — Personalisierung.
+"""Pipeline 4 — KI-Personalisierung / Icebreaker.
 
-Lädt die Website des Leads, extrahiert den Text (trafilatura) und lässt GPT
-die personalisierte Eröffnung für die Akquise-Mail schreiben
-({{personalization}}-Variable). Der User kann den Stil selbst vorgeben
-(workspaces.personalization_prompt); sonst gilt ein Default.
-Ergebnis -> businesses.personalization.
+Generiert die personalisierte Eroeffnungszeile ({{personalization}}-Variable)
+fuer die Akquise-Mail. Nutzt je nach Workspace-Einstellung (personalization_source)
+entweder die vom find_decisionmaker-Job recherchierte Firmenbeschreibung
+(businesses.company_summary), den gecrawlten Website-Text, oder beides.
+
+Der System-Prompt ist vollstaendig ueberschreibbar (workspaces.personalization_prompt);
+ohne eigene Vorgabe gilt DEFAULT_PROMPT. Wortzahl und verbotene Woerter werden nach
+der Generierung geprueft; bei Verstoss gibt es genau einen Korrektur-Versuch mit
+Hinweis auf das Problem. Schlaegt auch der zweite Versuch fehl, wird das Ergebnis
+trotzdem gespeichert, aber als personalization_needs_review markiert.
 """
 import httpx
 import trafilatura
@@ -12,29 +17,52 @@ from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
-from worker.keys import get_api_key
 
 MODEL = "gpt-4.1-mini"
 MAX_SITE_CHARS = 6000
 
-DEFAULT_STYLE = (
-    "Genau EIN Satz. Konkret auf das beziehen, was dieses Unternehmen laut Website macht oder "
-    "anbietet (z. B. ein spezielles Angebot, eine Besonderheit, eine Spezialisierung). "
-    "Keine leeren Schmeicheleien ('tolle Website', 'beeindruckend'), keine Anrede, keine Emojis, "
-    "kein Verkaufsangebot."
+DEFAULT_PROMPT = (
+    "Deine Aufgabe ist es, einen einzelnen, vertrieblich messerscharfen Aufhänger "
+    "(Icebreaker) für eine Cold-Email zu generieren, der beweist, dass du die Welt "
+    "des potenziellen Kunden tatsächlich verstehst.\n"
+    "Regeln für den Icebreaker:\n"
+    "- Nutze ausschließlich spezifische, überprüfbare Fakten aus der Recherche und "
+    "anderen Datenfeldern (Rolle, Unternehmen, Nische, Standort, Historie, Angebote, "
+    "Projekte etc.).\n"
+    "- Tonalität: direkt, selbstbewusst, geschäftsmäßig. Eine gewisse Schärfe ist "
+    "völlig in Ordnung. Kein Slang, kein Hype.\n"
+    "- Erwähne NICHT LinkedIn, Google, „Ich habe gesehen\", „Mir ist aufgefallen\", "
+    "„Ich habe gefunden\" oder andere Verweise auf deinen Rechercheprozess. Nenne "
+    "einfach direkt den Fakt.\n"
+    "- Baue KEINEN Namen des potenziellen Kunden, deinen eigenen Namen, Begrüßungen "
+    "oder Verabschiedungen in den Icebreaker ein.\n"
+    "- Du darfst kommerzielle Interessen, Dynamiken oder Hebelwirkung andeuten (z. B. "
+    "Mitbewerber überdauern, maßgeschneiderte Lösungen statt Masse wählen, eine Nische "
+    "verdoppeln, Kapazitäten schützen), aber du darfst deine eigene Dienstleistung oder "
+    "Lösung NICHT beschreiben oder pitchen.\n"
+    "- Der Satz sollte sich wie eine scharfe Beobachtung anfühlen, die du direkt vor "
+    "einer ernsthaften Vertriebsfrage äußern würdest.\n"
+    "- Werde konkret. Vermeide vages Lob. Verankere die Aussage in etwas "
+    "Zeitgebundenem, Ortsgebundenem oder Modellgebundenem (z. B. was sich verändert "
+    "hat, worauf sie doppelt gesetzt haben, was sie weitergeführt haben, während "
+    "andere damit aufhörten).\n"
+    "Folge dem Ausgabeformat immer ganz genau.\n\n"
+    "Schreibe standardmäßig auf Deutsch, außer diese Vorgaben verlangen hier "
+    "ausdrücklich eine andere Sprache."
 )
 
+DEFAULT_MAX_WORDS = 22
+DEFAULT_BANNED_WORDS = [
+    "Respekt", "bewundern", "stolz", "Lob", "begeistert",
+    "aufgeregt", "inspiriert", "beeindruckt", "geehrt",
+]
+DEFAULT_SOURCE = "company_summary"
+VALID_SOURCES = {"company_summary", "website_text", "both"}
 
-def build_system_prompt(custom_style: str | None) -> str:
-    style = custom_style.strip() if custom_style and custom_style.strip() else DEFAULT_STYLE
-    return (
-        "Du schreibst die personalisierte Eröffnung einer Cold-E-Mail an ein Unternehmen, "
-        "basierend auf dessen Website-Text. Schreibe in der Sprache, in der die Website "
-        "verfasst ist, außer die Stil-Vorgaben verlangen etwas anderes.\n\n"
-        f"Stil-Vorgaben des Absenders:\n{style}\n\n"
-        "Antworte NUR mit dem Text selbst — keine Anführungszeichen, keine Erklärungen, "
-        "kein Betreff."
-    )
+
+class NotReadyYet(Exception):
+    """Die benoetigte Recherche (company_summary) ist noch nicht fertig -> Job wird
+    vom Queue-Retry (fail_job, Backoff) automatisch spaeter erneut versucht."""
 
 
 def fetch_website_text(url: str) -> str | None:
@@ -48,40 +76,144 @@ def fetch_website_text(url: str) -> str | None:
     return trafilatura.extract(r.text)
 
 
+def _safe_website_text(website: str | None) -> str | None:
+    if not website:
+        return None
+    try:
+        text = fetch_website_text(website)
+    except httpx.HTTPError:
+        return None
+    if not text or len(text) < 100:
+        return None
+    return text[:MAX_SITE_CHARS]
+
+
+def build_context(biz: dict, source: str) -> str | None:
+    """Baut den Kontext-Text fuer den Prompt je nach gewaehlter Datenquelle.
+    Wirft NotReadyYet, wenn company_summary gebraucht wird, die Recherche
+    dafuer aber noch laeuft (statt permanent leer zu personalisieren)."""
+    summary = (biz.get("company_summary") or "").strip() or None
+    decisionmaker_pending = biz.get("decisionmaker_status") in ("pending", "running")
+
+    if source == "website_text":
+        return _safe_website_text(biz.get("website"))
+
+    if source == "company_summary":
+        if summary:
+            return summary
+        if decisionmaker_pending:
+            raise NotReadyYet("company_summary noch nicht recherchiert")
+        return _safe_website_text(biz.get("website"))  # Fallback, falls Recherche nichts fand
+
+    # source == "both"
+    website_text = _safe_website_text(biz.get("website"))
+    if not summary and decisionmaker_pending and not website_text:
+        raise NotReadyYet("company_summary noch nicht recherchiert")
+    parts = []
+    if summary:
+        parts.append("Firmenbeschreibung:\n" + summary)
+    if website_text:
+        parts.append("Website-Text:\n" + website_text)
+    return "\n\n".join(parts) if parts else None
+
+
+def word_count(text: str) -> int:
+    return len(text.split())
+
+
+def validate(text: str, max_words: int, banned_words: list[str]) -> list[str]:
+    """Liefert eine Liste menschenlesbarer Regelverstoesse (leer = alles ok)."""
+    problems = []
+    n = word_count(text)
+    if n > max_words:
+        problems.append(f"zu lang ({n} statt max. {max_words} Wörter)")
+    lowered = text.lower()
+    hits = [w for w in banned_words if w.strip() and w.strip().lower() in lowered]
+    if hits:
+        problems.append("enthält verbotene Wörter: " + ", ".join(hits))
+    return problems
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=5, max=60), reraise=True)
-def generate_personalization(
-    company_name: str, site_text: str, api_key: str, custom_style: str | None
+def generate(
+    company_name: str,
+    context: str,
+    api_key: str,
+    system_prompt: str,
+    correction: str | None = None,
 ) -> str:
     client = OpenAI(api_key=api_key)
+    user_content = f"Unternehmen: {company_name}\n\n{context}"
+    if correction:
+        user_content += (
+            f"\n\nDein letzter Versuch hat folgende Regel(n) verletzt: {correction}. "
+            "Bitte korrigiere und antworte erneut nur mit dem Text selbst."
+        )
     resp = client.responses.create(
         model=MODEL,
         input=[
-            {"role": "system", "content": build_system_prompt(custom_style)},
-            {
-                "role": "user",
-                "content": f"Unternehmen: {company_name}\n\nWebsite-Text:\n{site_text[:MAX_SITE_CHARS]}",
-            },
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
         ],
     )
     return resp.output_text.strip().strip('"')
 
 
+def load_agent_config(workspace_id: str) -> dict:
+    row = (
+        sb()
+        .table("workspaces")
+        .select(
+            "personalization_prompt, personalization_source, "
+            "personalization_max_words, personalization_banned_words"
+        )
+        .eq("id", workspace_id)
+        .single()
+        .execute()
+        .data
+        or {}
+    )
+    source = row.get("personalization_source") or DEFAULT_SOURCE
+    if source not in VALID_SOURCES:
+        source = DEFAULT_SOURCE
+    banned_raw = row.get("personalization_banned_words")
+    banned_words = (
+        [w for w in (x.strip() for x in banned_raw.split(",")) if w]
+        if banned_raw
+        else list(DEFAULT_BANNED_WORDS)
+    )
+    return {
+        "system_prompt": (row.get("personalization_prompt") or "").strip() or DEFAULT_PROMPT,
+        "source": source,
+        "max_words": row.get("personalization_max_words") or DEFAULT_MAX_WORDS,
+        "banned_words": banned_words,
+    }
+
+
 def run(job: dict) -> None:
+    from worker.keys import get_api_key  # lokaler Import, haelt Testabhaengigkeiten schlank
+
     ws = job["workspace_id"]
     business_id = job["payload"]["business_id"]
     biz = sb().table("businesses").select("*").eq("id", business_id).single().execute().data
-    if not biz.get("website") or biz.get("personalization"):
+    if biz.get("personalization"):
         return
-    try:
-        site_text = fetch_website_text(biz["website"])
-    except httpx.HTTPError:
-        return  # Website nicht erreichbar -> keine Personalisierung, kein Retry-Spam
-    if not site_text or len(site_text) < 100:
-        return
-    workspace = (
-        sb().table("workspaces").select("personalization_prompt").eq("id", ws).single().execute().data
-    )
-    line = generate_personalization(
-        biz["name"], site_text, get_api_key(ws, "openai"), workspace.get("personalization_prompt")
-    )
-    sb().table("businesses").update({"personalization": line}).eq("id", business_id).execute()
+
+    cfg = load_agent_config(ws)
+    context = build_context(biz, cfg["source"])  # kann NotReadyYet werfen -> Queue retried spaeter
+    if not context:
+        return  # keine Datenbasis vorhanden und Recherche bereits abgeschlossen -> kein Retry-Spam
+
+    api_key = get_api_key(ws, "openai")
+    line = generate(biz["name"], context, api_key, cfg["system_prompt"])
+    problems = validate(line, cfg["max_words"], cfg["banned_words"])
+    needs_review = False
+    if problems:
+        line = generate(
+            biz["name"], context, api_key, cfg["system_prompt"], correction="; ".join(problems)
+        )
+        needs_review = bool(validate(line, cfg["max_words"], cfg["banned_words"]))
+
+    sb().table("businesses").update(
+        {"personalization": line, "personalization_needs_review": needs_review}
+    ).eq("id", business_id).execute()

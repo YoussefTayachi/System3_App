@@ -118,15 +118,76 @@ def test_is_company_name():
     assert not is_company_name("Dr. Stefan Kudlacek")
 
 
-def test_build_system_prompt():
-    from worker.pipelines.personalize import DEFAULT_STYLE, build_system_prompt
+def test_build_context_prefers_company_summary():
+    from worker.pipelines.personalize import build_context
 
-    assert DEFAULT_STYLE in build_system_prompt(None)
-    assert DEFAULT_STYLE in build_system_prompt("   ")
-    custom = 'Menschlich und locker, z.B. "Hey, hab gesehen du arbeitest mit Tieren..."'
-    prompt = build_system_prompt(custom)
-    assert custom in prompt
-    assert DEFAULT_STYLE not in prompt
+    biz = {"company_summary": "Kurze Firmenbeschreibung.", "website": None,
+           "decisionmaker_status": "found"}
+    assert build_context(biz, "company_summary") == "Kurze Firmenbeschreibung."
+
+
+def test_build_context_waits_for_pending_research():
+    from worker.pipelines.personalize import NotReadyYet, build_context
+
+    biz = {"company_summary": None, "website": None, "decisionmaker_status": "running"}
+    try:
+        build_context(biz, "company_summary")
+        assert False, "sollte NotReadyYet werfen"
+    except NotReadyYet:
+        pass
+
+
+def test_build_context_no_retry_once_research_finished_without_summary():
+    from worker.pipelines.personalize import build_context
+
+    biz = {"company_summary": None, "website": None, "decisionmaker_status": "not_found"}
+    assert build_context(biz, "company_summary") is None
+
+
+def test_validate_word_count_and_banned_words():
+    from worker.pipelines.personalize import validate
+
+    ok = "Kurzer, praegnanter Satz mit klarem Fakt."
+    assert validate(ok, max_words=22, banned_words=["Respekt"]) == []
+
+    too_long = " ".join(["Wort"] * 30)
+    problems = validate(too_long, max_words=22, banned_words=["Respekt"])
+    assert any("zu lang" in p for p in problems)
+
+    with_banned = "Das ist beeindruckend und voller Respekt."
+    problems = validate(with_banned, max_words=22, banned_words=["Respekt"])
+    assert any("verbotene" in p for p in problems)
+
+
+def test_load_agent_config_defaults(monkeypatch):
+    from worker.pipelines import personalize
+
+    class FakeResult:
+        data = {}
+
+    class FakeQuery:
+        def select(self, *a, **k):
+            return self
+
+        def eq(self, *a, **k):
+            return self
+
+        def single(self):
+            return self
+
+        def execute(self):
+            return FakeResult()
+
+    class FakeSb:
+        def table(self, *a, **k):
+            return FakeQuery()
+
+    monkeypatch.setattr(personalize, "sb", lambda: FakeSb())
+    cfg = personalize.load_agent_config("ws-1")
+    assert cfg["source"] == personalize.DEFAULT_SOURCE
+    assert cfg["max_words"] == personalize.DEFAULT_MAX_WORDS
+    assert cfg["banned_words"] == personalize.DEFAULT_BANNED_WORDS
+    assert cfg["system_prompt"] == personalize.DEFAULT_PROMPT
 
 
 def test_build_discover_body():

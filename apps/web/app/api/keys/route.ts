@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { fernetEncrypt } from "@/lib/fernet";
 
-const PROVIDERS = ["google_maps", "openai", "hunter"];
+const PROVIDERS = ["google_maps", "openai", "hunter", "neverbounce"];
 
 export async function POST(req: Request) {
   const supabase = await createClient();

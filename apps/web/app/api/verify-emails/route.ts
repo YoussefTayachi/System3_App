@@ -1,0 +1,83 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { fernetDecrypt } from "@/lib/fernet";
+
+// NeverBounce-Ergebnis -> unsere bestehenden Felder (gleiche Skala wie Hunter, damit
+// die vorhandene VerificationShield-Logik im Frontend unveraendert weiterfunktioniert).
+const CONFIDENCE_BY_RESULT: Record<string, number> = {
+  valid: 97,
+  catchall: 60,
+  unknown: 40,
+  disposable: 20,
+  invalid: 0,
+};
+
+const MAX_BATCH = 200;
+
+async function checkOne(apiKey: string, email: string): Promise<string> {
+  const url =
+    "https://api.neverbounce.com/v4/single/check?" +
+    new URLSearchParams({ key: apiKey, email, timeout: "8" }).toString();
+  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  const body = await res.json();
+  if (body.status !== "success") throw new Error(body.message ?? "NeverBounce-Fehler");
+  return body.result as string; // valid | invalid | disposable | catchall | unknown
+}
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { contact_ids } = await req.json();
+  if (!Array.isArray(contact_ids) || contact_ids.length === 0) {
+    return NextResponse.json({ error: "contact_ids fehlt" }, { status: 400 });
+  }
+
+  const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
+  if (!ws) return NextResponse.json({ error: "Kein Workspace" }, { status: 400 });
+
+  const { data: keyRow } = await supabase
+    .from("api_keys")
+    .select("key_ciphertext")
+    .eq("workspace_id", ws.id)
+    .eq("provider", "neverbounce")
+    .single();
+  if (!keyRow) {
+    return NextResponse.json({ error: "Kein NeverBounce-Key in den Einstellungen hinterlegt." }, { status: 400 });
+  }
+  const apiKey = fernetDecrypt(process.env.APP_ENCRYPTION_KEY!, keyRow.key_ciphertext);
+
+  // Nur eigene, noch unverifizierte Kontakte mit E-Mail -- verhindert doppelte
+  // Kosten fuer bereits von Hunter verifizierte Kontakte.
+  const { data: contacts } = await supabase
+    .from("contacts")
+    .select("id, email")
+    .eq("workspace_id", ws.id)
+    .in("id", contact_ids.slice(0, MAX_BATCH))
+    .not("email", "is", null)
+    .is("email_verification_status", null);
+
+  const summary = { checked: 0, valid: 0, invalid: 0, catchall: 0, unknown: 0, disposable: 0, errors: 0 };
+  for (const c of contacts ?? []) {
+    try {
+      const result = await checkOne(apiKey, c.email as string);
+      await supabase
+        .from("contacts")
+        .update({
+          email_verification_status: result,
+          email_confidence: CONFIDENCE_BY_RESULT[result] ?? 40,
+          email_verified_by: "neverbounce",
+        })
+        .eq("id", c.id);
+      summary.checked += 1;
+      if (result in summary) (summary as Record<string, number>)[result] += 1;
+    } catch {
+      summary.errors += 1;
+    }
+  }
+
+  return NextResponse.json(summary);
+}

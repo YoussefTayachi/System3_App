@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "../../language-provider";
 
 export default function SearchSettings({
   searchId,
@@ -13,6 +14,7 @@ export default function SearchSettings({
   initialSchedule: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [schedule, setSchedule] = useState(initialSchedule);
@@ -50,18 +52,18 @@ export default function SearchSettings({
             className="rounded-lg border border-edge2 bg-field px-3 py-1.5 text-lg font-semibold text-ink outline-none focus:border-indigo-500"
           />
           <button onClick={saveName} className="text-xs text-indigo-600 dark:text-indigo-300 hover:text-indigo-500 dark:hover:text-indigo-200">
-            Speichern
+            {t.searchSettings.save}
           </button>
         </span>
       ) : (
         <button
           onClick={() => setEditing(true)}
-          title="Umbenennen"
+          title={t.searchSettings.renameTitle}
           className="group flex items-center gap-2 text-left"
         >
           <h1 className="text-xl font-semibold tracking-tight text-ink">{name}</h1>
           <span className="text-xs text-mute opacity-0 transition-opacity group-hover:opacity-100">
-            ✎ umbenennen
+            {t.searchSettings.renameHint}
           </span>
         </button>
       )}
@@ -69,11 +71,11 @@ export default function SearchSettings({
         value={schedule}
         onChange={(e) => saveSchedule(e.target.value)}
         className="rounded-lg border border-edge2 bg-field px-2.5 py-1.5 text-xs text-soft outline-none focus:border-indigo-500"
-        title="Lead-Abo: Liste automatisch mit neuen Firmen nachfüllen"
+        title={t.searchSettings.scheduleTooltip}
       >
-        <option value="none">Kein Abo</option>
-        <option value="weekly">Abo: wöchentlich</option>
-        <option value="daily">Abo: täglich</option>
+        <option value="none">{t.searchSettings.scheduleNone}</option>
+        <option value="weekly">{t.searchSettings.scheduleWeekly}</option>
+        <option value="daily">{t.searchSettings.scheduleDaily}</option>
       </select>
     </div>
   );

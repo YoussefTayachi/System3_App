@@ -23,7 +23,12 @@ SYSTEM_PROMPT = (
     "(check the website imprint/contact page and public listings) and social "
     "profiles (LinkedIn, Instagram, Twitter/X, Facebook) if available. "
     "Use the string 'NA' for anything you cannot find. Only include real people you found "
-    "evidence for; if you find nobody, return an empty persons list."
+    "evidence for; if you find nobody, return an empty persons list. "
+    "Additionally, based on the same research, write a concise factual company summary: "
+    "2-4 sentences covering what the business does, who its customers are, and any "
+    "notable specifics (location, scale, technology, recent developments). Write it in "
+    "the language of the company's own website. Purely factual, no marketing fluff, no "
+    "praise. If you cannot find enough to summarize, use the string 'NA'."
 )
 
 SCHEMA = {
@@ -31,6 +36,7 @@ SCHEMA = {
     "additionalProperties": False,
     "properties": {
         "company_name": {"type": "string"},
+        "company_summary": {"type": "string"},
         "persons": {
             "type": "array",
             "items": {
@@ -52,7 +58,7 @@ SCHEMA = {
             },
         },
     },
-    "required": ["company_name", "persons"],
+    "required": ["company_name", "company_summary", "persons"],
 }
 
 
@@ -139,6 +145,11 @@ def run(job: dict) -> None:
     set_status("running")
     try:
         data = research(biz, get_api_key(ws, "openai"))
+        summary = _clean(data.get("company_summary"))
+        if summary:
+            sb().table("businesses").update({"company_summary": summary}).eq(
+                "id", business_id
+            ).execute()
         emails, domains = load_suppression(ws)
         contacts = [
             c | {"workspace_id": ws, "business_id": business_id}

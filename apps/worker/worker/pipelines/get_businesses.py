@@ -164,4 +164,7 @@ def _finish(search_id: str, ws: str, auto_enrich: bool) -> None:
         enqueue(ws, "find_decisionmaker", {"business_id": b["id"]})
         if b.get("website"):
             enqueue(ws, "hunt_persons", {"business_id": b["id"]})
-            enqueue(ws, "personalize", {"business_id": b["id"]})
+        # personalize funktioniert jetzt auch ohne Website (Basis: company_summary aus
+        # find_decisionmaker); wartet ueber NotReadyYet + Queue-Retry, falls die
+        # Recherche noch laeuft.
+        enqueue(ws, "personalize", {"business_id": b["id"]})
