@@ -16,6 +16,25 @@ const INDUSTRIES = [
 const COUNTRY_CODES = ["AT", "DE", "CH", "GB", "US", "NL", "FR", "IT", "ES"];
 const HEADCOUNTS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"];
 
+// Punkt 7 aus dem Differenzierungs-Plan: vorgefertigte Kombinationen aus
+// Suchbegriff + Pain-Point-Filter (Punkt 3) fuer konkrete Nischen, damit man
+// nicht bei jeder neuen Zielgruppe wieder bei null anfaengt. Query-Text bewusst
+// nicht uebersetzt (wie INDUSTRIES oben), da das der tatsaechliche Google-Places-
+// Suchbegriff ist, unabhaengig von der UI-Sprache.
+type Playbook = {
+  id: string;
+  query: string;
+  noWebsite: boolean;
+  maxRating: number | "";
+};
+const PLAYBOOKS: Playbook[] = [
+  { id: "restaurants_no_website", query: "Restaurant", noWebsite: true, maxRating: "" },
+  { id: "handwerk_no_booking", query: "Handwerksbetrieb", noWebsite: true, maxRating: "" },
+  { id: "local_low_rating", query: "Dienstleister", noWebsite: false, maxRating: 3.5 },
+  { id: "friseure_no_website", query: "Friseursalon", noWebsite: true, maxRating: "" },
+  { id: "zahnaerzte_low_rating", query: "Zahnarzt", noWebsite: false, maxRating: 4 },
+];
+
 const inputCls =
   "mt-1.5 rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
   "placeholder-mute outline-none transition-colors focus:border-sky-500";
@@ -38,6 +57,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
   const [keywords, setKeywords] = useState("");
   const [painPointNoWebsite, setPainPointNoWebsite] = useState(false);
   const [painPointMaxRating, setPainPointMaxRating] = useState<number | "">("");
+  const [selectedPlaybook, setSelectedPlaybook] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -86,12 +106,36 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     router.refresh();
   }
 
+  function applyPlaybook(id: string) {
+    setSelectedPlaybook(id);
+    const pb = PLAYBOOKS.find((p) => p.id === id);
+    if (!pb) return;
+    setMode("maps");
+    setQuery(pb.query);
+    setPainPointNoWebsite(pb.noWebsite);
+    setPainPointMaxRating(pb.maxRating);
+  }
+
   const tabCls = (active: boolean) =>
     "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors " +
     (active ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : "text-faint hover:text-ink");
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <label className={labelCls + " max-w-xs"}>
+        {t.newSearchForm.playbookLabel}
+        <select
+          value={selectedPlaybook}
+          onChange={(e) => applyPlaybook(e.target.value)}
+          className={inputCls}
+        >
+          <option value="">{t.newSearchForm.playbookNone}</option>
+          {PLAYBOOKS.map((pb) => (
+            <option key={pb.id} value={pb.id}>{t.newSearchForm.playbookLabels[pb.id] ?? pb.id}</option>
+          ))}
+        </select>
+      </label>
+
       <div className="flex gap-1 rounded-lg border border-edge/60 bg-panel p-1 w-fit">
         <button type="button" className={tabCls(mode === "maps")} onClick={() => setMode("maps")}>
           {t.newSearchForm.tabMaps}
