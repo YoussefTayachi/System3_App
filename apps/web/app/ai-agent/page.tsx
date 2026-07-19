@@ -5,6 +5,8 @@ import {
   DEFAULT_BANNED_WORDS,
   DEFAULT_MAX_WORDS,
   DEFAULT_PROMPT,
+  PAIN_POINT_PROMPT,
+  NEEDS_PROMPT,
 } from "@/lib/personalization-defaults";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
@@ -21,6 +23,12 @@ const btnCls =
 const ghostBtnCls =
   "rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors " +
   "hover:border-edge3 hover:text-ink disabled:opacity-50";
+
+const TEMPLATE_PROMPTS: Record<string, string> = {
+  default: DEFAULT_PROMPT,
+  pain_point: PAIN_POINT_PROMPT,
+  needs: NEEDS_PROMPT,
+};
 
 export default function AiAgentPage() {
   const { t, lang } = useT();
@@ -67,6 +75,14 @@ export default function AiAgentPage() {
     setMaxWords(DEFAULT_MAX_WORDS);
     setBannedWordsText(DEFAULT_BANNED_WORDS.join(", "));
   }
+
+  function applyTemplate(id: string) {
+    const prompt = TEMPLATE_PROMPTS[id];
+    if (prompt) setSystemPrompt(prompt);
+  }
+
+  const activeTemplateId =
+    Object.entries(TEMPLATE_PROMPTS).find(([, p]) => p.trim() === systemPrompt.trim())?.[0] ?? "custom";
 
   async function save() {
     if (!wsId) return;
@@ -145,6 +161,55 @@ export default function AiAgentPage() {
               <p className="mt-1 text-xs text-faint">{opt.hint}</p>
             </label>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-edge/60 bg-panel p-6">
+        <h2 className="mb-1 font-medium text-ink">{t.aiAgent.templateHeading}</h2>
+        <p className="mb-3 text-sm text-faint">{t.aiAgent.templateSubtitle}</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {t.aiAgent.templates.map((tpl) => (
+            <label
+              key={tpl.id}
+              className={
+                "cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
+                (activeTemplateId === tpl.id
+                  ? "border-sky-500/60 bg-sky-500/5"
+                  : "border-edge2 hover:border-edge3")
+              }
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="template"
+                  checked={activeTemplateId === tpl.id}
+                  onChange={() => applyTemplate(tpl.id)}
+                  className="h-3.5 w-3.5 accent-sky-500"
+                />
+                <span className="font-medium text-ink">{tpl.label}</span>
+              </div>
+              <p className="mt-1 text-xs text-faint">{tpl.hint}</p>
+            </label>
+          ))}
+          <label
+            className={
+              "rounded-lg border p-3 text-sm " +
+              (activeTemplateId === "custom"
+                ? "border-sky-500/60 bg-sky-500/5"
+                : "border-edge2 opacity-60")
+            }
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="template"
+                checked={activeTemplateId === "custom"}
+                readOnly
+                className="h-3.5 w-3.5 accent-sky-500"
+              />
+              <span className="font-medium text-ink">{t.aiAgent.customTemplateLabel}</span>
+            </div>
+          </label>
         </div>
       </div>
 

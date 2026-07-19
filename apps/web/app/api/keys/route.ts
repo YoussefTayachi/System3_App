@@ -25,3 +25,26 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { provider } = await req.json();
+  if (!PROVIDERS.includes(provider)) {
+    return NextResponse.json({ error: "Ungültige Eingabe" }, { status: 400 });
+  }
+  const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
+  if (!ws) return NextResponse.json({ error: "Kein Workspace" }, { status: 400 });
+
+  const { error } = await supabase
+    .from("api_keys")
+    .delete()
+    .eq("workspace_id", ws.id)
+    .eq("provider", provider);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
