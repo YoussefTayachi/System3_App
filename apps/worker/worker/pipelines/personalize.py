@@ -93,6 +93,20 @@ def _safe_website_text(website: str | None) -> str | None:
     return text[:MAX_SITE_CHARS]
 
 
+def pain_point_hint(biz: dict) -> str | None:
+    """Zusatzsignal aus der Google-Places-Suche (fehlende Website, auffaellig
+    niedrige/keine Bewertung). Wird als zusaetzliche, klar benannte Tatsache an
+    den Kontext angehaengt -- der bestehende System-Prompt weist das Modell
+    ohnehin an, spezifische Fakten "aus anderen Datenfeldern" zu nutzen, dieses
+    Signal ist also nur ein weiteres solches Datenfeld, kein neuer Prompt-Typ."""
+    if not biz.get("website"):
+        return "Zusatzsignal: Dieses Unternehmen hat aktuell keine auffindbare Website."
+    rating = biz.get("rating")
+    if rating is not None and rating < 4.0:
+        return f"Zusatzsignal: Die Google-Bewertung liegt bei {rating} von 5 Sternen (auffaellig niedrig)."
+    return None
+
+
 def build_context(biz: dict, source: str) -> str | None:
     """Baut den Kontext-Text fuer den Prompt je nach gewaehlter Datenquelle.
     Wirft NotReadyYet, wenn company_summary gebraucht wird, die Recherche
@@ -100,15 +114,21 @@ def build_context(biz: dict, source: str) -> str | None:
     summary = (biz.get("company_summary") or "").strip() or None
     decisionmaker_pending = biz.get("decisionmaker_status") in ("pending", "running")
 
+    def with_hint(text: str | None) -> str | None:
+        hint = pain_point_hint(biz)
+        if not hint:
+            return text
+        return (text + "\n\n" + hint) if text else hint
+
     if source == "website_text":
-        return _safe_website_text(biz.get("website"))
+        return with_hint(_safe_website_text(biz.get("website")))
 
     if source == "company_summary":
         if summary:
-            return summary
+            return with_hint(summary)
         if decisionmaker_pending:
             raise NotReadyYet("company_summary noch nicht recherchiert")
-        return _safe_website_text(biz.get("website"))  # Fallback, falls Recherche nichts fand
+        return with_hint(_safe_website_text(biz.get("website")))  # Fallback, falls Recherche nichts fand
 
     # source == "both"
     website_text = _safe_website_text(biz.get("website"))
@@ -119,7 +139,7 @@ def build_context(biz: dict, source: str) -> str | None:
         parts.append("Firmenbeschreibung:\n" + summary)
     if website_text:
         parts.append("Website-Text:\n" + website_text)
-    return "\n\n".join(parts) if parts else None
+    return with_hint("\n\n".join(parts) if parts else None)
 
 
 def word_count(text: str) -> int:

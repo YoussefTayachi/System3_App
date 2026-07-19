@@ -20,6 +20,7 @@ type Contact = {
   phone: string | null;
   linkedin: string | null;
   source: string;
+  outreach_status: string;
   businesses: {
     name: string;
     website: string | null;
@@ -44,6 +45,7 @@ type Merged = {
   email_verification_status: string | null;
   phone: string | null;
   linkedin: string | null;
+  outreach_status: string;
   sources: string[];
 };
 
@@ -64,7 +66,18 @@ type Group = {
 type SearchOption = { id: string; query: string; location: string };
 type LeadsDict = Dictionary["leads"];
 
-const ALL_COLUMN_IDS = ["title", "email", "phone", "sources"] as const;
+const ALL_COLUMN_IDS = ["title", "email", "phone", "sources", "status"] as const;
+
+const STATUS_ORDER = ["new", "contacted", "replied", "meeting_booked", "customer", "not_interested"] as const;
+type OutreachStatus = (typeof STATUS_ORDER)[number];
+
+// Bei mehreren zusammengefuehrten Rohkontakten gewinnt der am weitesten fortgeschrittene
+// Status (Kunde schlaegt Meeting gebucht schlaegt Geantwortet usw.), damit ein bereits
+// erzielter Fortschritt nie durch einen aelteren "new"-Datensatz ueberschrieben wird.
+function statusRank(s: string): number {
+  const i = STATUS_ORDER.indexOf(s as OutreachStatus);
+  return i === -1 ? 0 : i;
+}
 
 function faviconUrl(website: string | null): string | null {
   if (!website) return null;
@@ -125,6 +138,9 @@ function mergeInto(target: Merged, c: Contact) {
   if (!target.first_name && c.first_name) target.first_name = c.first_name;
   if (!target.last_name && c.last_name) target.last_name = c.last_name;
   if (!target.linkedin && c.linkedin) target.linkedin = c.linkedin;
+  if (statusRank(c.outreach_status) > statusRank(target.outreach_status)) {
+    target.outreach_status = c.outreach_status;
+  }
   if (!target.sources.includes(c.source)) target.sources.push(c.source);
 }
 
@@ -171,6 +187,7 @@ function groupContacts(contacts: Contact[]): Group[] {
         email_verification_status: c.email_verification_status,
         phone: c.phone,
         linkedin: c.linkedin,
+        outreach_status: c.outreach_status || "new",
         sources: [c.source],
       });
     }
@@ -233,6 +250,41 @@ function toInstantlyCsv(groups: Group[]): string {
     }
   }
   return [header.join(","), ...lines].join("\n");
+}
+
+const STATUS_SELECT_CLS: Record<string, string> = {
+  new: "border-edge2 bg-chip text-soft",
+  contacted: "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300",
+  replied: "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300",
+  meeting_booked: "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300",
+  customer: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
+  not_interested: "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
+};
+
+function StatusSelect({
+  value,
+  onChange,
+  labels,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  labels: Record<string, string>;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      className={
+        "rounded-md border px-2 py-1 text-[11px] font-medium outline-none transition-colors " +
+        (STATUS_SELECT_CLS[value] ?? STATUS_SELECT_CLS.new)
+      }
+    >
+      {STATUS_ORDER.map((s) => (
+        <option key={s} value={s}>{labels[s]}</option>
+      ))}
+    </select>
+  );
 }
 
 function VerificationShield({ c, t }: { c: Merged; t: LeadsDict }) {
@@ -320,6 +372,8 @@ export default function LeadsTable({
   }, [searchParams]);
   const [onlyEmail, setOnlyEmail] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Group | null>(null);
@@ -357,7 +411,16 @@ export default function LeadsTable({
     });
   }
 
-  const allGroups = useMemo(() => groupContacts(contacts), [contacts]);
+  // statusOverrides haelt lokale, optimistische Aenderungen (Dropdown -> sofortige
+  // UI-Reaktion), ohne auf einen vollen router.refresh() zu warten -- gruppiert wird
+  // trotzdem aus contacts neu, damit ein echter Reload jederzeit die Quelle der
+  // Wahrheit bleibt.
+  const allGroups = useMemo(() => {
+    const withOverrides = contacts.map((c) =>
+      statusOverrides[c.id] ? { ...c, outreach_status: statusOverrides[c.id] } : c
+    );
+    return groupContacts(withOverrides);
+  }, [contacts, statusOverrides]);
 
   const filtered = useMemo(() => {
     const needle = q.toLowerCase();
@@ -367,6 +430,7 @@ export default function LeadsTable({
         const companyMatch = !needle || g.name.toLowerCase().includes(needle);
         const cs = g.contacts.filter((c) => {
           if (onlyEmail && !c.email) return false;
+          if (statusFilter && c.outreach_status !== statusFilter) return false;
           if (!needle || companyMatch) return true;
           return [c.full_name, c.title, c.email]
             .filter(Boolean)
@@ -375,7 +439,17 @@ export default function LeadsTable({
         return { ...g, contacts: cs };
       })
       .filter((g) => g.contacts.length > 0);
-  }, [allGroups, q, onlyEmail, searchFilter]);
+  }, [allGroups, q, onlyEmail, searchFilter, statusFilter]);
+
+  async function updateStatus(contactId: string, status: string) {
+    setStatusOverrides((prev) => ({ ...prev, [contactId]: status }));
+    const { error } = await createClient()
+      .from("contacts")
+      .update({ outreach_status: status })
+      .eq("id", contactId)
+      .eq("workspace_id", workspaceId);
+    if (error) push(t.common.error + error.message, "error");
+  }
 
   const totalContacts = useMemo(
     () => allGroups.reduce((n, g) => n + g.contacts.length, 0),
@@ -495,6 +569,9 @@ export default function LeadsTable({
     activeChips.push({ label: L.searchFilterPrefix + (s?.query ?? "…"), clear: () => setSearchFilter("") });
   }
   if (onlyEmail) activeChips.push({ label: L.onlyWithEmail, clear: () => setOnlyEmail(false) });
+  if (statusFilter) {
+    activeChips.push({ label: L.statusLabels[statusFilter], clear: () => setStatusFilter("") });
+  }
   if (q) activeChips.push({ label: '"' + q + '"', clear: () => setQ("") });
 
   return (
@@ -522,6 +599,16 @@ export default function LeadsTable({
               ))}
             </select>
           )}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-sky-500"
+          >
+            <option value="">{L.allStatuses}</option>
+            {STATUS_ORDER.map((s) => (
+              <option key={s} value={s}>{L.statusLabels[s]}</option>
+            ))}
+          </select>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-soft" title={L.selectAllTitle}>
             <input
               type="checkbox"
@@ -685,7 +772,8 @@ export default function LeadsTable({
                           {cols.has("title") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.title}</th>}
                           {cols.has("email") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.email}</th>}
                           {cols.has("phone") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.phone}</th>}
-                          {cols.has("sources") && <th className="py-1.5 font-medium">{L.tableHeaders.sources}</th>}
+                          {cols.has("sources") && <th className="py-1.5 pr-4 font-medium">{L.tableHeaders.sources}</th>}
+                          {cols.has("status") && <th className="py-1.5 font-medium">{L.tableHeaders.status}</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -720,7 +808,7 @@ export default function LeadsTable({
                               </td>
                             )}
                             {cols.has("sources") && (
-                              <td className="py-2">
+                              <td className="py-2 pr-4">
                                 <span className="flex gap-1">
                                   {c.sources.map((s) => (
                                     <span key={s} className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-soft">
@@ -728,6 +816,15 @@ export default function LeadsTable({
                                     </span>
                                   ))}
                                 </span>
+                              </td>
+                            )}
+                            {cols.has("status") && (
+                              <td className="py-2">
+                                <StatusSelect
+                                  value={c.outreach_status}
+                                  onChange={(v) => updateStatus(c.id, v)}
+                                  labels={L.statusLabels}
+                                />
                               </td>
                             )}
                           </tr>
@@ -877,12 +974,17 @@ export default function LeadsTable({
                 <div key={c.id} className="rounded-lg border border-edge/60 bg-surface/60 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-ink">{c.full_name ?? "—"}</p>
-                    <span className="flex gap-1">
+                    <span className="flex items-center gap-1.5">
                       {c.sources.map((s) => (
                         <span key={s} className="rounded-full border border-edge2 bg-chip px-1.5 py-0.5 text-[10px] text-soft">
                           {t.common.sourceLabels[s] ?? s}
                         </span>
                       ))}
+                      <StatusSelect
+                        value={c.outreach_status}
+                        onChange={(v) => updateStatus(c.id, v)}
+                        labels={L.statusLabels}
+                      />
                     </span>
                   </div>
                   {c.title && <p className="text-xs text-faint">{c.title}</p>}

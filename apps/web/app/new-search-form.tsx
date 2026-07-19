@@ -36,6 +36,8 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
   const [country, setCountry] = useState("AT");
   const [headcount, setHeadcount] = useState("");
   const [keywords, setKeywords] = useState("");
+  const [painPointNoWebsite, setPainPointNoWebsite] = useState(false);
+  const [painPointMaxRating, setPainPointMaxRating] = useState<number | "">("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,12 +56,17 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       schedule,
       next_run_at: nextRun,
     };
+    const painPointFilters: Record<string, unknown> = {};
+    if (painPointNoWebsite) painPointFilters.pain_point_no_website = true;
+    if (painPointMaxRating !== "") painPointFilters.pain_point_max_rating = painPointMaxRating;
+
     const row: Record<string, unknown> =
       mode === "maps"
         ? {
             ...base,
             workspace_id: workspaceId, source: "maps", query, location,
             max_results: maxResults, radius_m: radius,
+            ...(Object.keys(painPointFilters).length > 0 ? { filters: painPointFilters } : {}),
           }
         : {
             ...base,
@@ -131,9 +138,47 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
             <input type="number" min={100} max={50000} step={100} value={radius}
               onChange={(e) => setRadius(Number(e.target.value))} className={inputCls + " w-28"} />
           </label>
-          <SubmitButton loading={loading} />
         </div>
-      ) : (
+      ) : null}
+
+      {mode === "maps" && (
+        <div className="flex flex-wrap items-center gap-4 rounded-lg border border-edge/60 bg-surface/60 px-3.5 py-3">
+          <p className="text-xs font-medium text-faint">{t.newSearchForm.painPointHeading}</p>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-soft">
+            <input
+              type="checkbox"
+              checked={painPointNoWebsite}
+              onChange={(e) => setPainPointNoWebsite(e.target.checked)}
+              className="h-4 w-4 rounded accent-sky-500"
+            />
+            {t.newSearchForm.painPointNoWebsite}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-soft">
+            <input
+              type="checkbox"
+              checked={painPointMaxRating !== ""}
+              onChange={(e) => setPainPointMaxRating(e.target.checked ? 4 : "")}
+              className="h-4 w-4 rounded accent-sky-500"
+            />
+            {t.newSearchForm.painPointMaxRating}
+            {painPointMaxRating !== "" && (
+              <input
+                type="number"
+                min={1}
+                max={5}
+                step={0.5}
+                value={painPointMaxRating}
+                onChange={(e) => setPainPointMaxRating(Number(e.target.value))}
+                className={inputCls + " mt-0 w-20 py-1.5"}
+              />
+            )}
+          </label>
+        </div>
+      )}
+
+      {mode === "maps" && <SubmitButton loading={loading} />}
+
+      {mode === "corporate" ? (
         <div className="flex flex-wrap items-end gap-3">
           <label className={labelCls + " min-w-44 flex-1"}>
             {t.newSearchForm.industry}
@@ -174,7 +219,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
           </label>
           <SubmitButton loading={loading} />
         </div>
-      )}
+      ) : null}
       {mode === "corporate" && (
         <p className="text-xs text-mute">{t.newSearchForm.corporateHint}</p>
       )}

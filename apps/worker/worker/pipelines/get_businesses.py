@@ -114,6 +114,9 @@ def run(job: dict) -> None:
             if b.get("place_id")
         }
         _, blocked_domains = load_suppression(ws)
+        filters = search.get("filters") or {}
+        pain_point_no_website = bool(filters.get("pain_point_no_website"))
+        pain_point_max_rating = filters.get("pain_point_max_rating")
         collected, token, pages = 0, "", 0
         while collected < search["max_results"] and pages < 10:
             data = search_places_page(
@@ -130,6 +133,14 @@ def run(job: dict) -> None:
                 d = domain_of(parsed.get("website"))
                 if d and d in blocked_domains:
                     continue
+                # Pain-Point-Filter: Firma muss dem gewaehlten Signal entsprechen,
+                # sonst wird sie gar nicht erst aufgenommen (kein Zwischenzustand noetig).
+                if pain_point_no_website and parsed.get("website"):
+                    continue
+                if pain_point_max_rating is not None:
+                    rating = parsed.get("rating")
+                    if rating is not None and rating > pain_point_max_rating:
+                        continue
                 known.add(parsed["place_id"])
                 rows.append(parsed | {"workspace_id": ws, "search_id": search_id})
             if rows:
