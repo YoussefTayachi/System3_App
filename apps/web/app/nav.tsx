@@ -32,7 +32,7 @@ export default function Nav() {
                 : "border border-transparent text-soft hover:bg-chip hover:text-ink")
             }
           >
-            <Icon className={"h-[18px] w-[18px] " + (active ? "text-indigo-600 dark:text-indigo-400" : "text-faint")} />
+            <Icon className={"h-[18px] w-[18px] " + (active ? "text-sky-600 dark:text-sky-400" : "text-faint")} />
             {label}
           </Link>
         );

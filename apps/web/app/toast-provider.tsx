@@ -16,7 +16,7 @@ const ICONS: Record<ToastType, string> = { success: "✓", error: "✕", info: "
 const DOT: Record<ToastType, string> = {
   success: "bg-emerald-500",
   error: "bg-red-500",
-  info: "bg-indigo-500",
+  info: "bg-sky-500",
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {

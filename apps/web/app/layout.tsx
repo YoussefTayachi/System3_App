@@ -10,7 +10,7 @@ import CommandPalette, { CommandPaletteTrigger } from "./command-palette";
 import { ToastProvider } from "./toast-provider";
 
 export const metadata = {
-  title: "System3 — Lead-Gen & Outreach",
+  title: "Thaw · Lead-Gen & Outreach",
   description: "B2B Leads finden, anreichern und kontaktieren",
 };
 
@@ -49,12 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="flex min-h-screen">
             <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
               <div className="mb-6 flex items-center gap-2 px-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
-                  3
-                </div>
-                <span className="text-sm font-semibold tracking-tight text-ink">
-                  System3
-                </span>
+                <span className="text-lg font-bold tracking-tight text-[#0EA5E9]">thaw</span>
               </div>
               <CommandPaletteTrigger />
               <Nav />
@@ -75,7 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </aside>
             <div className="min-w-0 flex-1 md:pl-64">
               <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
-                <span className="font-semibold">System3</span>
+                <span className="text-lg font-bold tracking-tight text-[#0EA5E9]">thaw</span>
               </header>
               <main className="mx-auto max-w-7xl px-8 py-7">{children}</main>
             </div>

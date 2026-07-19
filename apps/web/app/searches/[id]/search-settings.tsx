@@ -49,9 +49,9 @@ export default function SearchSettings({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && saveName()}
             autoFocus
-            className="rounded-lg border border-edge2 bg-field px-3 py-1.5 text-lg font-semibold text-ink outline-none focus:border-indigo-500"
+            className="rounded-lg border border-edge2 bg-field px-3 py-1.5 text-lg font-semibold text-ink outline-none focus:border-sky-500"
           />
-          <button onClick={saveName} className="text-xs text-indigo-600 dark:text-indigo-300 hover:text-indigo-500 dark:hover:text-indigo-200">
+          <button onClick={saveName} className="text-xs text-sky-600 dark:text-sky-300 hover:text-sky-500 dark:hover:text-sky-200">
             {t.searchSettings.save}
           </button>
         </span>
@@ -70,7 +70,7 @@ export default function SearchSettings({
       <select
         value={schedule}
         onChange={(e) => saveSchedule(e.target.value)}
-        className="rounded-lg border border-edge2 bg-field px-2.5 py-1.5 text-xs text-soft outline-none focus:border-indigo-500"
+        className="rounded-lg border border-edge2 bg-field px-2.5 py-1.5 text-xs text-soft outline-none focus:border-sky-500"
         title={t.searchSettings.scheduleTooltip}
       >
         <option value="none">{t.searchSettings.scheduleNone}</option>

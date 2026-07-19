@@ -14,10 +14,10 @@ type TestResult = { text: string; problems: string[]; wordCount: number };
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder-mute outline-none transition-colors focus:border-indigo-500";
+  "placeholder-mute outline-none transition-colors focus:border-sky-500";
 const btnCls =
-  "rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg " +
-  "shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50";
+  "rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg " +
+  "shadow-sky-600/25 transition-all hover:bg-sky-500 disabled:opacity-50";
 const ghostBtnCls =
   "rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors " +
   "hover:border-edge3 hover:text-ink disabled:opacity-50";
@@ -128,7 +128,7 @@ export default function AiAgentPage() {
               className={
                 "cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
                 (source === opt.value
-                  ? "border-indigo-500/60 bg-indigo-500/5"
+                  ? "border-sky-500/60 bg-sky-500/5"
                   : "border-edge2 hover:border-edge3")
               }
             >
@@ -138,7 +138,7 @@ export default function AiAgentPage() {
                   name="source"
                   checked={source === opt.value}
                   onChange={() => setSource(opt.value)}
-                  className="h-3.5 w-3.5 accent-indigo-500"
+                  className="h-3.5 w-3.5 accent-sky-500"
                 />
                 <span className="font-medium text-ink">{opt.label}</span>
               </div>
@@ -218,7 +218,7 @@ export default function AiAgentPage() {
         )}
 
         {testResult && (
-          <div className="lock-pop mt-4 rounded-lg border-l-2 border-indigo-500/50 bg-indigo-500/5 p-4">
+          <div className="lock-pop mt-4 rounded-lg border-l-2 border-sky-500/50 bg-sky-500/5 p-4">
             <p className="text-sm italic leading-relaxed text-ink">{testResult.text}</p>
             <div className="mt-2 flex items-center gap-2 text-xs">
               <span className="text-faint">{testResult.wordCount} {t.aiAgent.words}</span>

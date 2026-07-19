@@ -105,7 +105,7 @@ export default function BlocklistPage() {
           onChange={(e) => setInput(e.target.value)}
           rows={5}
           placeholder={t.blocklist.textareaPlaceholder}
-          className="w-full rounded-lg border border-edge2 bg-field px-3 py-2 font-mono text-sm text-ink placeholder-mute outline-none focus:border-indigo-500"
+          className="w-full rounded-lg border border-edge2 bg-field px-3 py-2 font-mono text-sm text-ink placeholder-mute outline-none focus:border-sky-500"
         />
         <div className="mt-3 flex items-center gap-3">
           <button

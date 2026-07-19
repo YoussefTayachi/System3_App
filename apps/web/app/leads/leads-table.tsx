@@ -507,14 +507,14 @@ export default function LeadsTable({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={L.searchPlaceholder}
-              className="w-full rounded-lg border border-edge2 bg-field py-2.5 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-indigo-500"
+              className="w-full rounded-lg border border-edge2 bg-field py-2.5 pl-9 pr-3 text-sm text-ink placeholder-mute outline-none transition-colors focus:border-sky-500"
             />
           </div>
           {searches && searches.length > 0 && (
             <select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-indigo-500"
+              className="rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-sky-500"
             >
               <option value="">{L.allSearches}</option>
               {searches.map((s) => (
@@ -530,7 +530,7 @@ export default function LeadsTable({
                 if (el) el.indeterminate = !allFilteredSelected && someFilteredSelected;
               }}
               onChange={toggleSelectAll}
-              className="h-4 w-4 rounded accent-indigo-500"
+              className="h-4 w-4 rounded accent-sky-500"
             />
             {L.selectAll}
           </label>
@@ -539,7 +539,7 @@ export default function LeadsTable({
               type="checkbox"
               checked={onlyEmail}
               onChange={(e) => setOnlyEmail(e.target.checked)}
-              className="h-4 w-4 rounded accent-indigo-500"
+              className="h-4 w-4 rounded accent-sky-500"
             />
             {L.onlyWithEmail}
           </label>
@@ -551,7 +551,7 @@ export default function LeadsTable({
               type="checkbox"
               checked={excludeInvalid}
               onChange={(e) => setExcludeInvalid(e.target.checked)}
-              className="h-4 w-4 rounded accent-indigo-500"
+              className="h-4 w-4 rounded accent-sky-500"
             />
             {L.excludeInvalidExport}
           </label>
@@ -578,7 +578,7 @@ export default function LeadsTable({
                       type="checkbox"
                       checked={cols.has(c.id)}
                       onChange={() => toggleCol(c.id)}
-                      className="h-3.5 w-3.5 rounded accent-indigo-500"
+                      className="h-3.5 w-3.5 rounded accent-sky-500"
                     />
                     {c.label}
                   </label>
@@ -594,7 +594,7 @@ export default function LeadsTable({
             onClick={() => download(toInstantlyCsv(withoutInvalidEmails(filtered, excludeInvalid)), "-instantly.csv")}
             disabled={shownContacts === 0}
             title={L.exportInstantlyTitle}
-            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:shadow-xl hover:shadow-indigo-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
+            className="rounded-lg bg-gradient-to-r from-sky-600 to-sky-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-sky-600/25 transition-all hover:shadow-xl hover:shadow-sky-600/35 hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
           >
             {L.exportInstantly}
           </button>
@@ -613,10 +613,10 @@ export default function LeadsTable({
               <button
                 key={chip.label}
                 onClick={chip.clear}
-                className="group flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-xs text-indigo-600 transition-colors hover:border-indigo-500/60 dark:text-indigo-300"
+                className="group flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs text-sky-600 transition-colors hover:border-sky-500/60 dark:text-sky-300"
               >
                 {chip.label}
-                <span className="text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-200">×</span>
+                <span className="text-sky-400 group-hover:text-sky-600 dark:group-hover:text-sky-200">×</span>
               </button>
             ))}
           </div>
@@ -633,7 +633,7 @@ export default function LeadsTable({
                     type="checkbox"
                     checked={selected.has(g.key)}
                     onChange={() => toggleSelect(g.key)}
-                    className="h-4 w-4 shrink-0 rounded accent-indigo-500"
+                    className="h-4 w-4 shrink-0 rounded accent-sky-500"
                   />
                   <button
                     type="button"
@@ -674,7 +674,7 @@ export default function LeadsTable({
                       </p>
                     )}
                     {g.personalization && (
-                      <p className="mb-3 max-w-3xl border-l-2 border-indigo-500/40 pl-3 text-xs italic leading-relaxed text-soft">
+                      <p className="mb-3 max-w-3xl border-l-2 border-sky-500/40 pl-3 text-xs italic leading-relaxed text-soft">
                         {g.personalization}
                       </p>
                     )}
@@ -694,7 +694,7 @@ export default function LeadsTable({
                             <td className="py-2 pr-4 text-ink">
                               {c.linkedin ? (
                                 <a href={c.linkedin} target="_blank"
-                                  className="underline-offset-4 hover:text-indigo-600 hover:underline dark:hover:text-indigo-300">
+                                  className="underline-offset-4 hover:text-sky-600 hover:underline dark:hover:text-sky-300">
                                   {c.full_name ?? "—"}
                                 </a>
                               ) : (
@@ -755,7 +755,7 @@ export default function LeadsTable({
             </span>
             <button
               onClick={() => download(toInstantlyCsv(withoutInvalidEmails(selectedGroups, excludeInvalid)), "-auswahl-instantly.csv")}
-              className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              className="rounded-lg bg-gradient-to-r from-sky-600 to-sky-600 px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 active:scale-[0.98]"
             >
               {L.bulkExportInstantly}
             </button>
@@ -804,7 +804,7 @@ export default function LeadsTable({
                   <h2 className="text-lg font-semibold tracking-tight text-ink">{drawer.name}</h2>
                   {drawer.website && (
                     <a href={drawer.website} target="_blank"
-                      className="text-xs text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-300">
+                      className="text-xs text-sky-600 underline-offset-4 hover:underline dark:text-sky-300">
                       {drawer.website.replace(/^https?:\/\//, "")}
                     </a>
                   )}
@@ -863,7 +863,7 @@ export default function LeadsTable({
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
                   {L.personalizationHeading}
                 </p>
-                <p className="mb-5 rounded-lg border-l-2 border-indigo-500/50 bg-indigo-500/5 p-3 text-sm italic leading-relaxed text-soft">
+                <p className="mb-5 rounded-lg border-l-2 border-sky-500/50 bg-sky-500/5 p-3 text-sm italic leading-relaxed text-soft">
                   {drawer.personalization}
                 </p>
               </>
@@ -895,7 +895,7 @@ export default function LeadsTable({
                     {c.phone && <p>{c.phone}</p>}
                     {c.linkedin && (
                       <a href={c.linkedin} target="_blank"
-                        className="text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-300">
+                        className="text-sky-600 underline-offset-4 hover:underline dark:text-sky-300">
                         {L.linkedinProfile}
                       </a>
                     )}

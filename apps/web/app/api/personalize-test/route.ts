@@ -21,7 +21,7 @@ async function fetchWebsiteText(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(15000),
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; System3Bot/1.0)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ThawBot/1.0)" },
     });
     if (!res.ok) return null;
     const html = await res.text();

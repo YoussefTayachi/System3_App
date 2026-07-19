@@ -9,11 +9,11 @@ const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder-mute outline-none transition-colors focus:border-indigo-500";
+  "placeholder-mute outline-none transition-colors focus:border-sky-500";
 
 const btnCls =
-  "rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg " +
-  "shadow-indigo-600/25 transition-all hover:bg-indigo-500 disabled:opacity-50";
+  "rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg " +
+  "shadow-sky-600/25 transition-all hover:bg-sky-500 disabled:opacity-50";
 
 export default function SettingsPage() {
   const { t } = useT();

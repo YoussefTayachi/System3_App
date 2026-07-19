@@ -10,7 +10,7 @@ export default function ActivityChart({ data }: { data: { day: string; leads: nu
               className={
                 "bar-rise w-full rounded-sm transition-colors " +
                 (d.leads > 0
-                  ? "bg-gradient-to-t from-indigo-600/80 to-indigo-400/80 group-hover:from-indigo-500 group-hover:to-indigo-300"
+                  ? "bg-gradient-to-t from-sky-600/80 to-sky-400/80 group-hover:from-sky-500 group-hover:to-sky-300"
                   : "bg-chip")
               }
               style={{ height: h + "%", animationDelay: i * 35 + "ms" }}

@@ -83,12 +83,12 @@ export default async function Dashboard() {
         </div>
         {hasActive && (
           <div className="flex flex-col items-end gap-1.5">
-            <span className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+            <span className="flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500" />
               {stats.jobs_active} {t.dashboard.agentsWorking}
             </span>
             <div className="h-1 w-36 overflow-hidden rounded-full bg-chip">
-              <div className="h-full w-1/3 animate-[slide_1.4s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
+              <div className="h-full w-1/3 animate-[slide_1.4s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-sky-500 to-sky-500" />
             </div>
           </div>
         )}
@@ -109,8 +109,8 @@ export default async function Dashboard() {
 
       {/* ROI-Banner */}
       {(stats.contacts_total ?? 0) > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-panel to-panel px-4 py-3 dark:border-indigo-500/25 dark:from-indigo-500/10">
-          <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-sky-200/70 bg-gradient-to-r from-sky-50 via-panel to-panel px-4 py-3 dark:border-sky-500/25 dark:from-sky-500/10">
+          <svg className="h-4 w-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
           </svg>
           <p className="text-sm text-ink">

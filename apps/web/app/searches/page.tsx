@@ -75,7 +75,7 @@ export default async function SearchesPage() {
                       {s.source === "corporate" ? "Corporate" : "Maps"}
                     </span>
                     {s.schedule !== "none" && (
-                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-600 dark:text-indigo-300">
+                      <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-600 dark:text-sky-300">
                         {t.searches.subscriptionPrefix} · {s.schedule === "weekly" ? t.searches.subscriptionWeekly : t.searches.subscriptionDaily}
                       </span>
                     )}
@@ -103,7 +103,7 @@ export default async function SearchesPage() {
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-chip">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
+                          className="h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-500 transition-all"
                           style={{ width: progress + "%" }}
                         />
                       </div>

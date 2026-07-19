@@ -29,14 +29,9 @@ export default function LoginPage() {
   return (
     <div className="dot-grid flex min-h-screen items-center justify-center px-4">
       <div className="fade-up w-full max-w-sm">
-        <div className="mb-7 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white">
-            3
-          </div>
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-ink">System3</h1>
-            <p className="text-xs text-faint">{t.login.tagline}</p>
-          </div>
+        <div className="mb-7">
+          <span className="text-2xl font-bold tracking-tight text-[#0EA5E9]">thaw</span>
+          <p className="mt-1 text-xs text-faint">{t.login.tagline}</p>
         </div>
 
         <div className="rounded-lg border border-edge/60 bg-panel p-6 shadow-sm">

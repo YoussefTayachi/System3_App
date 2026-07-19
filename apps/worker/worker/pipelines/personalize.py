@@ -70,7 +70,7 @@ def fetch_website_text(url: str) -> str | None:
         url,
         timeout=20,
         follow_redirects=True,
-        headers={"User-Agent": "Mozilla/5.0 (compatible; System3Bot/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (compatible; ThawBot/1.0)"},
     )
     r.raise_for_status()
     return trafilatura.extract(r.text)

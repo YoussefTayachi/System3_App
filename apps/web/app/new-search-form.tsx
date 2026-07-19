@@ -18,7 +18,7 @@ const HEADCOUNTS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000
 
 const inputCls =
   "mt-1.5 rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder-mute outline-none transition-colors focus:border-indigo-500";
+  "placeholder-mute outline-none transition-colors focus:border-sky-500";
 const labelCls = "flex flex-col text-sm font-medium text-soft";
 
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
@@ -81,7 +81,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
 
   const tabCls = (active: boolean) =>
     "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors " +
-    (active ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" : "text-faint hover:text-ink");
+    (active ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : "text-faint hover:text-ink");
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
