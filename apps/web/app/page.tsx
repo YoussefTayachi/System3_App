@@ -22,6 +22,16 @@ type Stats = {
   jobs_decisionmaker: number;
   jobs_personalize: number;
   jobs_hunter: number;
+  meetings_booked: number;
+  customers: number;
+  instantly: {
+    emails_sent: number;
+    replies_unique: number;
+    bounced: number;
+    opportunities: number;
+    opportunity_value: number;
+    campaigns_linked: number;
+  };
   activity: { day: string; leads: number }[];
 };
 
@@ -128,6 +138,52 @@ export default async function Dashboard() {
           </p>
         </div>
       )}
+
+      {/* Umsatz- & Zustellbarkeits-Uebersicht (Punkt 2 + 6): nur sichtbar, sobald
+          mindestens eine Suche mit einer Instantly-Kampagne verknuepft ist, siehe
+          Suchdetail-Seite. Ohne Verknuepfung gibt es hier schlicht nichts zu zeigen. */}
+      {stats.instantly && stats.instantly.campaigns_linked > 0 && (() => {
+        const bounceRate = stats.instantly.emails_sent > 0
+          ? (stats.instantly.bounced / stats.instantly.emails_sent) * 100
+          : 0;
+        const riskyBounceRate = bounceRate > 3;
+        const costPerOpportunity = stats.instantly.opportunities > 0
+          ? costs.usd / stats.instantly.opportunities
+          : null;
+        return (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-edge/60 bg-panel p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{t.dashboard.instantlySent}</p>
+              <p className="mt-0.5 text-xl font-semibold text-ink">{stats.instantly.emails_sent}</p>
+              <p className="text-[11px] text-faint">{stats.instantly.replies_unique} {t.dashboard.instantlyReplies}</p>
+            </div>
+            <div className="rounded-lg border border-edge/60 bg-panel p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{t.dashboard.instantlyBounceRate}</p>
+              <p className={"mt-0.5 text-xl font-semibold " + (riskyBounceRate ? "text-red-600 dark:text-red-400" : "text-ink")}>
+                {bounceRate.toFixed(1)}%
+              </p>
+              <p className="text-[11px] text-faint">
+                {riskyBounceRate ? t.dashboard.instantlyBounceRisky : t.dashboard.instantlyBounceOk}
+              </p>
+            </div>
+            <div className="rounded-lg border border-edge/60 bg-panel p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{t.dashboard.instantlyMeetings}</p>
+              <p className="mt-0.5 text-xl font-semibold text-ink">{stats.meetings_booked}</p>
+              <p className="text-[11px] text-faint">{stats.customers} {t.dashboard.instantlyCustomers}</p>
+            </div>
+            <div className="rounded-lg border border-edge/60 bg-panel p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{t.dashboard.instantlyPipelineValue}</p>
+              <p className="mt-0.5 text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+                ~{Math.round(stats.instantly.opportunity_value)} €
+              </p>
+              <p className="text-[11px] text-faint">
+                {stats.instantly.opportunities} {t.dashboard.instantlyOpportunities}
+                {costPerOpportunity !== null && ` · ${costPerOpportunity.toFixed(2)} $ ${t.dashboard.instantlyCostPer}`}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Chart + Neueste Leads */}
       <div className="grid gap-5 lg:grid-cols-5">

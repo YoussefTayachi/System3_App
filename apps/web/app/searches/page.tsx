@@ -30,7 +30,7 @@ export default async function SearchesPage() {
   if (!ws) return <p className="text-faint">Kein Workspace gefunden.</p>;
   const workspaceId = ws.workspace.id;
 
-  const [{ data }, trashRes] = await Promise.all([
+  const [{ data }, trashRes, instantlyStatsRes] = await Promise.all([
     supabase.rpc("search_overview", { p_workspace_id: workspaceId }),
     supabase
       .from("searches")
@@ -38,9 +38,16 @@ export default async function SearchesPage() {
       .eq("workspace_id", workspaceId)
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false }),
+    supabase
+      .from("instantly_campaign_stats")
+      .select("search_id, emails_sent_count, bounced_count, reply_count_unique")
+      .eq("workspace_id", workspaceId),
   ]);
   const searches = (data ?? []) as SearchRow[];
   const trash = trashRes.data ?? [];
+  const instantlyBySearch = new Map(
+    (instantlyStatsRes.data ?? []).map((r) => [r.search_id, r])
+  );
   const anyRunning = searches.some(
     (s) => s.status === "pending" || s.status === "running" || s.businesses_done < s.businesses
   );
@@ -66,6 +73,10 @@ export default async function SearchesPage() {
           const progress =
             s.businesses > 0 ? Math.round((s.businesses_done / s.businesses) * 100) : 0;
           const enriching = s.status === "completed" && s.businesses_done < s.businesses;
+          const instantlyStats = instantlyBySearch.get(s.id);
+          const bounceRate = instantlyStats && instantlyStats.emails_sent_count > 0
+            ? (instantlyStats.bounced_count / instantlyStats.emails_sent_count) * 100
+            : null;
           return (
             <Link
               key={s.id}
@@ -83,6 +94,19 @@ export default async function SearchesPage() {
                     {s.schedule !== "none" && (
                       <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-600 dark:text-sky-300">
                         {t.searches.subscriptionPrefix} · {s.schedule === "weekly" ? t.searches.subscriptionWeekly : t.searches.subscriptionDaily}
+                      </span>
+                    )}
+                    {bounceRate !== null && (
+                      <span
+                        title={t.searches.instantlyBadgeTitle}
+                        className={
+                          "rounded-full border px-2 py-0.5 text-[11px] " +
+                          (bounceRate > 3
+                            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+                            : "border-edge2 bg-chip text-soft")
+                        }
+                      >
+                        {t.searches.instantlyBadge(instantlyStats!.emails_sent_count, bounceRate)}
                       </span>
                     )}
                   </div>
