@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { fernetDecrypt } from "@/lib/fernet";
 
 // NeverBounce-Ergebnis -> unsere bestehenden Felder (gleiche Skala wie Hunter, damit
@@ -36,13 +37,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "contact_ids fehlt" }, { status: 400 });
   }
 
-  const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
+  const ws = await getCurrentWorkspace(supabase);
   if (!ws) return NextResponse.json({ error: "Kein Workspace" }, { status: 400 });
 
   const { data: keyRow } = await supabase
     .from("api_keys")
     .select("key_ciphertext")
-    .eq("workspace_id", ws.id)
+    .eq("workspace_id", ws.workspace.id)
     .eq("provider", "neverbounce")
     .single();
   if (!keyRow) {
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
   const { data: contacts } = await supabase
     .from("contacts")
     .select("id, email")
-    .eq("workspace_id", ws.id)
+    .eq("workspace_id", ws.workspace.id)
     .in("id", contact_ids.slice(0, MAX_BATCH))
     .not("email", "is", null)
     .is("email_verification_status", null);

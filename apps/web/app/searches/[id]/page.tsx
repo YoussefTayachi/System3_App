@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { filterSuppressed } from "@/lib/suppression";
 import { getLangServer, formatDate } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
@@ -15,15 +16,25 @@ export default async function SearchDetailPage({
   const lang = await getLangServer();
   const t = dict[lang];
   const supabase = await createClient();
+  const ws = await getCurrentWorkspace(supabase);
+  if (!ws) return <p className="text-faint">Kein Workspace gefunden.</p>;
+  const workspaceId = ws.workspace.id;
+
+  // .eq("workspace_id", workspaceId) auf der searches-Abfrage sorgt dafuer, dass
+  // eine ID aus einem ANDEREN eigenen Workspace hier als "nicht gefunden" behandelt
+  // wird, statt Daten aus dem falschen Workspace anzuzeigen -- RLS wuerde den
+  // Zugriff technisch erlauben (gehoert ja demselben Account), aber es waere hier
+  // der falsche Kontext.
   const [searchRes, contactsRes, suppressionRes] = await Promise.all([
-    supabase.from("searches").select("*").eq("id", id).single(),
+    supabase.from("searches").select("*").eq("id", id).eq("workspace_id", workspaceId).single(),
     supabase
       .from("contacts")
       .select("*, businesses!inner(name, website, personalization, company_summary, search_id, address, phone_national, decisionmaker_status, hunter_status)")
+      .eq("workspace_id", workspaceId)
       .eq("businesses.search_id", id)
       .order("created_at", { ascending: false })
       .limit(1000),
-    supabase.from("suppression_list").select("email,domain"),
+    supabase.from("suppression_list").select("email,domain").eq("workspace_id", workspaceId),
   ]);
   const search = searchRes.data;
 

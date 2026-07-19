@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
+import { useWorkspace } from "../workspace-provider";
 
 type Row = { id: string; email: string | null; domain: string | null; reason: string };
 
@@ -29,31 +30,26 @@ function parseInput(text: string): { emails: string[]; domains: string[] } {
 export default function BlocklistPage() {
   const { t } = useT();
   const { push } = useToast();
+  const { workspaceId: wsId } = useWorkspace();
   const [rows, setRows] = useState<Row[]>([]);
   const [input, setInput] = useState("");
-  const [wsId, setWsId] = useState<string | null>(null);
 
   async function reload() {
     const { data } = await createClient()
       .from("suppression_list")
       .select("id,email,domain,reason")
+      .eq("workspace_id", wsId)
       .order("created_at", { ascending: false })
       .limit(2000);
     setRows(data ?? []);
   }
 
   useEffect(() => {
-    createClient()
-      .from("workspaces")
-      .select("id")
-      .limit(1)
-      .single()
-      .then(({ data }) => data && setWsId(data.id));
     reload();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wsId]);
 
   async function addEntries(text: string) {
-    if (!wsId) return;
     const { emails, domains } = parseInput(text);
     if (emails.length === 0 && domains.length === 0) {
       push(t.blocklist.noValidEntries, "error");
@@ -84,7 +80,7 @@ export default function BlocklistPage() {
   }
 
   async function remove(id: string) {
-    await createClient().from("suppression_list").delete().eq("id", id);
+    await createClient().from("suppression_list").delete().eq("id", id).eq("workspace_id", wsId);
     setRows((r) => r.filter((x) => x.id !== id));
   }
 

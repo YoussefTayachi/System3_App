@@ -2,12 +2,15 @@ import "./globals.css";
 import "@fontsource-variable/inter";
 import { createClient } from "@/lib/supabase/server";
 import { getLangServer } from "@/lib/i18n/lang";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import Nav from "./nav";
 import LogoutButton from "./logout-button";
 import ThemeToggle from "./theme-toggle";
 import { LanguageProvider, LanguageToggle } from "./language-provider";
 import CommandPalette, { CommandPaletteTrigger } from "./command-palette";
 import { ToastProvider } from "./toast-provider";
+import { WorkspaceProvider } from "./workspace-provider";
+import WorkspaceSwitcher from "./workspace-switcher";
 
 export const metadata = {
   title: "Thaw · Lead-Gen & Outreach",
@@ -37,6 +40,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     );
   }
 
+  const ws = await getCurrentWorkspace(supabase);
+
+  // Sollte durch den Signup-Trigger (handle_new_user) praktisch nie vorkommen --
+  // trotzdem sauber abfangen statt mit einem undefined-Zugriff abzustuerzen.
+  if (!ws) {
+    return (
+      <html lang={lang} suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
+        <body>
+          <LanguageProvider lang={lang}>
+            <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-faint">
+              Kein Workspace gefunden. Bitte kontaktiere den Support.
+            </div>
+          </LanguageProvider>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
@@ -44,38 +68,44 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <LanguageProvider lang={lang}>
-          <ToastProvider>
-          <CommandPalette />
-          <div className="flex min-h-screen">
-            <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
-              <div className="mb-6 flex items-center gap-2 px-2">
-                <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
-              </div>
-              <CommandPaletteTrigger />
-              <Nav />
-              <div className="mt-auto border-t border-edge/60 pt-4">
-                <div className="flex items-center justify-between px-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs text-faint">{user.email}</p>
-                    <div className="pt-1">
-                      <LogoutButton />
+          <WorkspaceProvider workspaceId={ws.workspace.id} workspaceName={ws.workspace.name} workspaces={ws.workspaces}>
+            <ToastProvider>
+            <CommandPalette />
+            <div className="flex min-h-screen">
+              <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
+                <div className="mb-4 flex items-center gap-2 px-2">
+                  <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
+                </div>
+                <WorkspaceSwitcher className="mb-3" />
+                <CommandPaletteTrigger />
+                <Nav />
+                <div className="mt-auto border-t border-edge/60 pt-4">
+                  <div className="flex items-center justify-between px-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs text-faint">{user.email}</p>
+                      <div className="pt-1">
+                        <LogoutButton />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <LanguageToggle />
+                      <ThemeToggle />
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <LanguageToggle />
-                    <ThemeToggle />
-                  </div>
                 </div>
+              </aside>
+              <div className="min-w-0 flex-1 md:pl-64">
+                <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
+                  <span className="shrink-0 text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
+                  <div className="min-w-0 flex-1">
+                    <WorkspaceSwitcher />
+                  </div>
+                </header>
+                <main className="mx-auto max-w-7xl px-8 py-7">{children}</main>
               </div>
-            </aside>
-            <div className="min-w-0 flex-1 md:pl-64">
-              <header className="sticky top-0 z-10 flex h-14 items-center border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
-                <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
-              </header>
-              <main className="mx-auto max-w-7xl px-8 py-7">{children}</main>
             </div>
-          </div>
-          </ToastProvider>
+            </ToastProvider>
+          </WorkspaceProvider>
         </LanguageProvider>
       </body>
     </html>

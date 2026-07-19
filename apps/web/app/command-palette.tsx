@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { IconAgent, IconDashboard, IconLeads, IconSearch, IconSettings, IconShield } from "./icons";
 import { useT } from "./language-provider";
+import { useWorkspace } from "./workspace-provider";
 
 type BizResult = { id: string; name: string };
 
@@ -24,6 +25,7 @@ export function CommandPaletteTrigger() {
 export default function CommandPalette() {
   const router = useRouter();
   const { t } = useT();
+  const { workspaceId } = useWorkspace();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BizResult[]>([]);
@@ -88,13 +90,14 @@ export default function CommandPalette() {
       const { data } = await createClient()
         .from("businesses")
         .select("id, name")
+        .eq("workspace_id", workspaceId)
         .ilike("name", `%${term}%`)
         .limit(6);
       setResults(data ?? []);
       setLoading(false);
     }, 250);
     return () => window.clearTimeout(debounceRef.current);
-  }, [query]);
+  }, [query, workspaceId]);
 
   if (!open) return null;
 

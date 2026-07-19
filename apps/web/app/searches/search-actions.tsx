@@ -2,10 +2,12 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "../language-provider";
+import { useWorkspace } from "../workspace-provider";
 
 export function TrashButton({ searchId }: { searchId: string }) {
   const router = useRouter();
   const { t } = useT();
+  const { workspaceId } = useWorkspace();
   return (
     <button
       title={t.searchActions.trashTitle}
@@ -15,7 +17,8 @@ export function TrashButton({ searchId }: { searchId: string }) {
         await createClient()
           .from("searches")
           .update({ deleted_at: new Date().toISOString(), schedule: "none" })
-          .eq("id", searchId);
+          .eq("id", searchId)
+          .eq("workspace_id", workspaceId);
         router.refresh();
       }}
       className="rounded-lg border border-edge/60 px-3 py-2 text-sm text-faint transition-colors hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-600 dark:text-red-400"
@@ -28,10 +31,15 @@ export function TrashButton({ searchId }: { searchId: string }) {
 export function RestoreButton({ searchId }: { searchId: string }) {
   const router = useRouter();
   const { t } = useT();
+  const { workspaceId } = useWorkspace();
   return (
     <button
       onClick={async () => {
-        await createClient().from("searches").update({ deleted_at: null }).eq("id", searchId);
+        await createClient()
+          .from("searches")
+          .update({ deleted_at: null })
+          .eq("id", searchId)
+          .eq("workspace_id", workspaceId);
         router.refresh();
       }}
       className="rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors hover:border-edge3 hover:text-ink"
@@ -44,13 +52,14 @@ export function RestoreButton({ searchId }: { searchId: string }) {
 export function HardDeleteButton({ searchId }: { searchId: string }) {
   const router = useRouter();
   const { t } = useT();
+  const { workspaceId } = useWorkspace();
   return (
     <button
       onClick={async () => {
         if (!confirm(t.searchActions.hardDeleteConfirm)) return;
         const supabase = createClient();
-        await supabase.from("businesses").delete().eq("search_id", searchId);
-        await supabase.from("searches").delete().eq("id", searchId);
+        await supabase.from("businesses").delete().eq("search_id", searchId).eq("workspace_id", workspaceId);
+        await supabase.from("searches").delete().eq("id", searchId).eq("workspace_id", workspaceId);
         router.refresh();
       }}
       className="rounded-lg border border-red-300 dark:border-red-900/60 px-4 py-2 text-sm text-red-600 dark:text-red-400 transition-colors hover:border-red-500 hover:text-red-500 dark:hover:text-red-500 dark:text-red-300"

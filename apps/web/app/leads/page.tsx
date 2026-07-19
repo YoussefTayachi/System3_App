@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { filterSuppressed } from "@/lib/suppression";
 import { getLangServer } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
@@ -8,18 +9,24 @@ export default async function LeadsPage() {
   const lang = await getLangServer();
   const t = dict[lang];
   const supabase = await createClient();
+  const ws = await getCurrentWorkspace(supabase);
+  if (!ws) return <p className="text-faint">Kein Workspace gefunden.</p>;
+  const workspaceId = ws.workspace.id;
+
   const [contactsRes, searchesRes, suppressionRes] = await Promise.all([
     supabase
       .from("contacts")
       .select("*, businesses(name, website, personalization, company_summary, search_id, address, phone_national, decisionmaker_status, hunter_status)")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase
       .from("searches")
       .select("id, name, query, location")
+      .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
-    supabase.from("suppression_list").select("email,domain"),
+    supabase.from("suppression_list").select("email,domain").eq("workspace_id", workspaceId),
   ]);
   const contacts = filterSuppressed(contactsRes.data ?? [], suppressionRes.data ?? []);
   const searchOptions = (searchesRes.data ?? []).map((s) => ({

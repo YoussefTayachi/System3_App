@@ -26,6 +26,18 @@ const de = {
     triggerLabel: "Suche...",
   },
   logout: "Abmelden",
+  workspace: {
+    switcherLabel: "Workspaces",
+    newWorkspace: "Neuer Workspace",
+    newWorkspaceNamePlaceholder: "z. B. Kunde XY",
+    create: "Erstellen",
+    rename: "Umbenennen",
+    deleted: "Workspace gelöscht",
+    cannotDeleteLast: "Der letzte Workspace kann nicht gelöscht werden.",
+    deleteConfirm: (name: string) =>
+      `Workspace "${name}" wirklich löschen? Alle Leads, Kontakte und Kampagnen darin werden unwiderruflich gelöscht.`,
+    createError: "Workspace konnte nicht erstellt werden: ",
+  },
   login: {
     tagline: "Leads finden · anreichern · personalisieren",
     heading: "Anmelden",
@@ -313,6 +325,18 @@ const en: Dictionary = {
     triggerLabel: "Search...",
   },
   logout: "Log out",
+  workspace: {
+    switcherLabel: "Workspaces",
+    newWorkspace: "New workspace",
+    newWorkspaceNamePlaceholder: "e.g. Client XY",
+    create: "Create",
+    rename: "Rename",
+    deleted: "Workspace deleted",
+    cannotDeleteLast: "The last workspace can't be deleted.",
+    deleteConfirm: (name: string) =>
+      `Really delete workspace "${name}"? All leads, contacts and campaigns in it will be permanently deleted.`,
+    createError: "Couldn't create workspace: ",
+  },
   login: {
     tagline: "Find leads · enrich · personalize",
     heading: "Sign in",

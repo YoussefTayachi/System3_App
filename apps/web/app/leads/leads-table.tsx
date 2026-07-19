@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { IconSearch } from "../icons";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
+import { useWorkspace } from "../workspace-provider";
 import type { Dictionary } from "@/lib/i18n/dict";
 
 type Contact = {
@@ -306,6 +307,7 @@ export default function LeadsTable({
   const searchParams = useSearchParams();
   const { t } = useT();
   const { push } = useToast();
+  const { workspaceId } = useWorkspace();
   const L = t.leads;
   const ALL_COLUMNS = ALL_COLUMN_IDS.map((id) => ({ id, label: L.columnLabels[id] }));
 
@@ -435,12 +437,10 @@ export default function LeadsTable({
     if (!confirm(L.bulkBlockConfirm(selectedGroups.length))) return;
     setBulkAction("block");
     const supabase = createClient();
-    const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
-    if (!ws) return;
     const rows = selectedGroups
       .filter((g) => g.website)
       .map((g) => ({
-        workspace_id: ws.id,
+        workspace_id: workspaceId,
         domain: g.website!.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0],
         reason: "manual",
       }));
@@ -459,7 +459,7 @@ export default function LeadsTable({
     const supabase = createClient();
     const contactIds = selectedGroups.flatMap((g) => g.contacts.map((c) => c.id));
     for (let i = 0; i < contactIds.length; i += 200) {
-      await supabase.from("contacts").delete().in("id", contactIds.slice(i, i + 200));
+      await supabase.from("contacts").delete().in("id", contactIds.slice(i, i + 200)).eq("workspace_id", workspaceId);
     }
     setBulkAction("");
     push(L.bulkDeleteDone(selectedGroups.length), "success");

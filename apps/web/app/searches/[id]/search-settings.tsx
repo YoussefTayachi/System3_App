@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "../../language-provider";
+import { useWorkspace } from "../../workspace-provider";
 
 export default function SearchSettings({
   searchId,
@@ -15,12 +16,17 @@ export default function SearchSettings({
 }) {
   const router = useRouter();
   const { t } = useT();
+  const { workspaceId } = useWorkspace();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [schedule, setSchedule] = useState(initialSchedule);
 
   async function saveName() {
-    await createClient().from("searches").update({ name: name.trim() || null }).eq("id", searchId);
+    await createClient()
+      .from("searches")
+      .update({ name: name.trim() || null })
+      .eq("id", searchId)
+      .eq("workspace_id", workspaceId);
     setEditing(false);
     router.refresh();
   }
@@ -36,7 +42,8 @@ export default function SearchSettings({
     await createClient()
       .from("searches")
       .update({ schedule: value, next_run_at: nextRun })
-      .eq("id", searchId);
+      .eq("id", searchId)
+      .eq("workspace_id", workspaceId);
     router.refresh();
   }
 

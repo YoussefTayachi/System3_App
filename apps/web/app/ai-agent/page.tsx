@@ -8,6 +8,7 @@ import {
 } from "@/lib/personalization-defaults";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
+import { useWorkspace } from "../workspace-provider";
 
 type BusinessOption = { id: string; name: string; company_summary: string | null; website: string | null };
 type TestResult = { text: string; problems: string[]; wordCount: number };
@@ -34,7 +35,7 @@ const ghostBtnCls =
 export default function AiAgentPage() {
   const { t, lang } = useT();
   const { push } = useToast();
-  const [wsId, setWsId] = useState<string | null>(null);
+  const { workspaceId: wsId } = useWorkspace();
   const [systemPrompt, setSystemPrompt] = useState("");
   const [source, setSource] = useState<string>("company_summary");
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS);
@@ -56,13 +57,12 @@ export default function AiAgentPage() {
     supabase
       .from("workspaces")
       .select(
-        "id, personalization_prompt, personalization_source, personalization_max_words, personalization_banned_words"
+        "personalization_prompt, personalization_source, personalization_max_words, personalization_banned_words"
       )
-      .limit(1)
+      .eq("id", wsId)
       .single()
       .then(({ data }) => {
         if (!data) return;
-        setWsId(data.id);
         setSource(data.personalization_source || "company_summary");
         setMaxWords(data.personalization_max_words || DEFAULT_MAX_WORDS);
         setBannedWordsText(data.personalization_banned_words || DEFAULT_BANNED_WORDS.join(", "));
@@ -77,13 +77,14 @@ export default function AiAgentPage() {
     supabase
       .from("businesses")
       .select("id, name, company_summary, website")
+      .eq("workspace_id", wsId)
       .or("company_summary.not.is.null,website.not.is.null")
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data }) => setBusinesses(data ?? []));
     loadTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [wsId]);
 
   // Wenn die Standard-Vorlage aktiv ist, zeigt das Textfeld den Prompt in der
   // aktuellen UI-Sprache. Beim Sprachwechsel live mitziehen.
@@ -108,6 +109,7 @@ export default function AiAgentPage() {
     const { data } = await supabase
       .from("personalization_templates")
       .select("id, name, prompt, max_words, banned_words")
+      .eq("workspace_id", wsId)
       .order("created_at", { ascending: true });
     setCustomTemplates(data ?? []);
   }
@@ -127,7 +129,7 @@ export default function AiAgentPage() {
   }
 
   async function createTemplate() {
-    if (!wsId || !newTemplateName.trim() || customTemplates.length >= MAX_CUSTOM_TEMPLATES) return;
+    if (!newTemplateName.trim() || customTemplates.length >= MAX_CUSTOM_TEMPLATES) return;
     setSavingNewTemplate(true);
     const supabase = createClient();
     const { error } = await supabase.from("personalization_templates").insert({
@@ -152,7 +154,11 @@ export default function AiAgentPage() {
     e.preventDefault();
     e.stopPropagation();
     const supabase = createClient();
-    const { error } = await supabase.from("personalization_templates").delete().eq("id", id);
+    const { error } = await supabase
+      .from("personalization_templates")
+      .delete()
+      .eq("id", id)
+      .eq("workspace_id", wsId);
     if (error) {
       push(t.common.error + error.message, "error");
       return;
@@ -163,7 +169,6 @@ export default function AiAgentPage() {
   }
 
   async function save() {
-    if (!wsId) return;
     const supabase = createClient();
     const isCustomTemplateSelected = customTemplates.some((tpl) => tpl.id === selectedTemplateId);
 
@@ -191,7 +196,8 @@ export default function AiAgentPage() {
           max_words: maxWords,
           banned_words: bannedWordsText.trim(),
         })
-        .eq("id", selectedTemplateId);
+        .eq("id", selectedTemplateId)
+        .eq("workspace_id", wsId);
       loadTemplates();
     }
 

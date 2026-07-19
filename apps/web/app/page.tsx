@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { getLangServer, formatDate } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
 import NewSearchForm from "./new-search-form";
@@ -42,18 +43,23 @@ export default async function Dashboard() {
   const lang = await getLangServer();
   const t = dict[lang];
   const supabase = await createClient();
-  const [statsRes, searchesRes, wsRes, recentRes] = await Promise.all([
-    supabase.rpc("dashboard_stats"),
+  const ws = await getCurrentWorkspace(supabase);
+  if (!ws) return <p className="text-faint">Kein Workspace gefunden.</p>;
+  const workspaceId = ws.workspace.id;
+
+  const [statsRes, searchesRes, recentRes] = await Promise.all([
+    supabase.rpc("dashboard_stats", { p_workspace_id: workspaceId }),
     supabase
       .from("searches")
       .select("*")
+      .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(6),
-    supabase.from("workspaces").select("id").limit(1).single(),
     supabase
       .from("contacts")
       .select("id, full_name, title, email, businesses(name)")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
@@ -168,7 +174,7 @@ export default async function Dashboard() {
       <section className="rounded-lg border border-edge/60 bg-panel p-5 shadow-sm">
         <h2 className="mb-1 text-sm font-medium text-ink">{t.dashboard.newSearch}</h2>
         <p className="mb-4 text-sm text-faint">{t.dashboard.newSearchHint}</p>
-        {wsRes.data ? <NewSearchForm workspaceId={wsRes.data.id} /> : null}
+        <NewSearchForm workspaceId={workspaceId} />
       </section>
 
       {/* Letzte Suchen */}

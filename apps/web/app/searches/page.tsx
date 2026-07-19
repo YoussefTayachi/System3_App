@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { getLangServer, formatDate } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
 import AutoRefresh from "../auto-refresh";
@@ -25,11 +26,16 @@ export default async function SearchesPage() {
   const lang = await getLangServer();
   const t = dict[lang];
   const supabase = await createClient();
+  const ws = await getCurrentWorkspace(supabase);
+  if (!ws) return <p className="text-faint">Kein Workspace gefunden.</p>;
+  const workspaceId = ws.workspace.id;
+
   const [{ data }, trashRes] = await Promise.all([
-    supabase.rpc("search_overview"),
+    supabase.rpc("search_overview", { p_workspace_id: workspaceId }),
     supabase
       .from("searches")
       .select("id, name, query, location, deleted_at")
+      .eq("workspace_id", workspaceId)
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false }),
   ]);

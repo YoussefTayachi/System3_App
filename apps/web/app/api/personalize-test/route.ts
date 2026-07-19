@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { fernetDecrypt } from "@/lib/fernet";
 import { validateIcebreaker } from "@/lib/personalization-defaults";
 
@@ -63,14 +64,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "business_id und system_prompt sind Pflicht" }, { status: 400 });
   }
 
-  const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
+  const ws = await getCurrentWorkspace(supabase);
   if (!ws) return NextResponse.json({ error: "Kein Workspace" }, { status: 400 });
 
   const { data: biz } = await supabase
     .from("businesses")
     .select("id, name, company_summary, website")
     .eq("id", businessId)
-    .eq("workspace_id", ws.id)
+    .eq("workspace_id", ws.workspace.id)
     .single();
   if (!biz) return NextResponse.json({ error: "Firma nicht gefunden" }, { status: 404 });
 
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
   const { data: keyRow } = await supabase
     .from("api_keys")
     .select("key_ciphertext")
-    .eq("workspace_id", ws.id)
+    .eq("workspace_id", ws.workspace.id)
     .eq("provider", "openai")
     .single();
   if (!keyRow) {

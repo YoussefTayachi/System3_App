@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { IconLock } from "../icons";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
+import { useWorkspace } from "../workspace-provider";
 
 const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const;
 
@@ -18,6 +19,7 @@ const btnCls =
 export default function SettingsPage() {
   const { t } = useT();
   const { push } = useToast();
+  const { workspaceId } = useWorkspace();
   const [saved, setSaved] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
@@ -28,8 +30,9 @@ export default function SettingsPage() {
     supabase
       .from("api_keys")
       .select("provider")
+      .eq("workspace_id", workspaceId)
       .then(({ data }) => setSaved((data ?? []).map((r) => r.provider)));
-  }, []);
+  }, [workspaceId]);
 
   async function save(provider: string) {
     const key = values[provider];
