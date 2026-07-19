@@ -46,7 +46,12 @@ DEFAULT_PROMPT = (
     "Zeitgebundenem, Ortsgebundenem oder Modellgebundenem (z. B. was sich verändert "
     "hat, worauf sie doppelt gesetzt haben, was sie weitergeführt haben, während "
     "andere damit aufhörten).\n"
-    "Folge dem Ausgabeformat immer ganz genau.\n\n"
+    "Folge dem Ausgabeformat immer ganz genau.\n"
+    "-Schreibe immer in der \"Du\" Form und nicht \"Sie\" Form und lass den Icebreaker "
+    "persönlich klingen.\n"
+    "-Beende den Icebreaker damit, dass du dich deswegen meldest und nutze "
+    "verschiedene Varianten zb:\"Dachte ich melde mich mal\", \"Deswegen wollte ich uns "
+    "connecten\", \"Deshalb wollte ich dir mal schreiben\" etc..\n\n"
     "Schreibe standardmäßig auf Deutsch, außer diese Vorgaben verlangen hier "
     "ausdrücklich eine andere Sprache."
 )

@@ -5,14 +5,21 @@ import {
   DEFAULT_BANNED_WORDS,
   DEFAULT_MAX_WORDS,
   DEFAULT_PROMPT,
-  PAIN_POINT_PROMPT,
-  NEEDS_PROMPT,
 } from "@/lib/personalization-defaults";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 
 type BusinessOption = { id: string; name: string; company_summary: string | null; website: string | null };
 type TestResult = { text: string; problems: string[]; wordCount: number };
+type CustomTemplate = {
+  id: string;
+  name: string;
+  prompt: string;
+  max_words: number;
+  banned_words: string;
+};
+
+const MAX_CUSTOM_TEMPLATES = 5;
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
@@ -24,12 +31,6 @@ const ghostBtnCls =
   "rounded-lg border border-edge2 px-4 py-2 text-sm text-soft transition-colors " +
   "hover:border-edge3 hover:text-ink disabled:opacity-50";
 
-const TEMPLATE_PROMPTS: Record<string, string> = {
-  default: DEFAULT_PROMPT,
-  pain_point: PAIN_POINT_PROMPT,
-  needs: NEEDS_PROMPT,
-};
-
 export default function AiAgentPage() {
   const { t, lang } = useT();
   const { push } = useToast();
@@ -38,6 +39,11 @@ export default function AiAgentPage() {
   const [source, setSource] = useState<string>("company_summary");
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS);
   const [bannedWordsText, setBannedWordsText] = useState(DEFAULT_BANNED_WORDS.join(", "));
+
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [addingTemplate, setAddingTemplate] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
   const [testBusinessId, setTestBusinessId] = useState("");
@@ -68,7 +74,17 @@ export default function AiAgentPage() {
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data }) => setBusinesses(data ?? []));
+    loadTemplates();
   }, []);
+
+  async function loadTemplates() {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("personalization_templates")
+      .select("id, name, prompt, max_words, banned_words")
+      .order("created_at", { ascending: true });
+    setCustomTemplates(data ?? []);
+  }
 
   function resetToDefault() {
     setSystemPrompt(DEFAULT_PROMPT);
@@ -76,13 +92,50 @@ export default function AiAgentPage() {
     setBannedWordsText(DEFAULT_BANNED_WORDS.join(", "));
   }
 
-  function applyTemplate(id: string) {
-    const prompt = TEMPLATE_PROMPTS[id];
-    if (prompt) setSystemPrompt(prompt);
+  function applyCustomTemplate(tpl: CustomTemplate) {
+    setSystemPrompt(tpl.prompt);
+    setMaxWords(tpl.max_words);
+    setBannedWordsText(tpl.banned_words);
   }
 
+  const matchedCustom = customTemplates.find((tpl) => tpl.prompt.trim() === systemPrompt.trim());
   const activeTemplateId =
-    Object.entries(TEMPLATE_PROMPTS).find(([, p]) => p.trim() === systemPrompt.trim())?.[0] ?? "custom";
+    systemPrompt.trim() === DEFAULT_PROMPT.trim() ? "default" : matchedCustom?.id ?? "custom";
+
+  async function saveNewTemplate() {
+    if (!wsId || !newTemplateName.trim() || customTemplates.length >= MAX_CUSTOM_TEMPLATES) return;
+    setSavingTemplate(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("personalization_templates").insert({
+      workspace_id: wsId,
+      name: newTemplateName.trim(),
+      prompt: systemPrompt.trim(),
+      max_words: maxWords,
+      banned_words: bannedWordsText.trim(),
+    });
+    setSavingTemplate(false);
+    if (error) {
+      push(t.common.error + error.message, "error");
+      return;
+    }
+    setNewTemplateName("");
+    setAddingTemplate(false);
+    push(t.aiAgent.templateSaved, "success");
+    loadTemplates();
+  }
+
+  async function deleteTemplate(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const supabase = createClient();
+    const { error } = await supabase.from("personalization_templates").delete().eq("id", id);
+    if (error) {
+      push(t.common.error + error.message, "error");
+      return;
+    }
+    push(t.aiAgent.templateDeleted, "success");
+    loadTemplates();
+  }
 
   async function save() {
     if (!wsId) return;
@@ -168,11 +221,35 @@ export default function AiAgentPage() {
         <h2 className="mb-1 font-medium text-ink">{t.aiAgent.templateHeading}</h2>
         <p className="mb-3 text-sm text-faint">{t.aiAgent.templateSubtitle}</p>
         <div className="grid gap-2 sm:grid-cols-3">
-          {t.aiAgent.templates.map((tpl) => (
+          <label
+            className={
+              "cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
+              (activeTemplateId === "default"
+                ? "border-sky-500/60 bg-sky-500/5"
+                : "border-edge2 hover:border-edge3")
+            }
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="template"
+                checked={activeTemplateId === "default"}
+                onChange={resetToDefault}
+                className="h-3.5 w-3.5 accent-sky-500"
+              />
+              <span className="font-medium text-ink">{t.aiAgent.thawTemplateLabel}</span>
+              <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
+                {t.aiAgent.thawTemplateBadge}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-faint">{t.aiAgent.thawTemplateHint}</p>
+          </label>
+
+          {customTemplates.map((tpl) => (
             <label
               key={tpl.id}
               className={
-                "cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
+                "group relative cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
                 (activeTemplateId === tpl.id
                   ? "border-sky-500/60 bg-sky-500/5"
                   : "border-edge2 hover:border-edge3")
@@ -183,33 +260,60 @@ export default function AiAgentPage() {
                   type="radio"
                   name="template"
                   checked={activeTemplateId === tpl.id}
-                  onChange={() => applyTemplate(tpl.id)}
+                  onChange={() => applyCustomTemplate(tpl)}
                   className="h-3.5 w-3.5 accent-sky-500"
                 />
-                <span className="font-medium text-ink">{tpl.label}</span>
+                <span className="truncate font-medium text-ink">{tpl.name}</span>
               </div>
-              <p className="mt-1 text-xs text-faint">{tpl.hint}</p>
+              <button
+                type="button"
+                onClick={(e) => deleteTemplate(tpl.id, e)}
+                className="absolute right-2 top-2 hidden text-faint hover:text-red-500 group-hover:block"
+                aria-label={t.common.delete}
+              >
+                ✕
+              </button>
             </label>
           ))}
-          <label
-            className={
-              "rounded-lg border p-3 text-sm " +
-              (activeTemplateId === "custom"
-                ? "border-sky-500/60 bg-sky-500/5"
-                : "border-edge2 opacity-60")
-            }
-          >
-            <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="template"
-                checked={activeTemplateId === "custom"}
-                readOnly
-                className="h-3.5 w-3.5 accent-sky-500"
-              />
-              <span className="font-medium text-ink">{t.aiAgent.customTemplateLabel}</span>
-            </div>
-          </label>
+
+          {customTemplates.length < MAX_CUSTOM_TEMPLATES &&
+            (addingTemplate ? (
+              <div className="rounded-lg border border-sky-500/60 bg-sky-500/5 p-3 text-sm">
+                <input
+                  autoFocus
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  placeholder={t.aiAgent.newTemplateNamePlaceholder}
+                  className="w-full rounded-md border border-edge2 bg-field px-2 py-1.5 text-sm text-ink outline-none focus:border-sky-500"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={saveNewTemplate}
+                    disabled={!newTemplateName.trim() || savingTemplate}
+                    className="rounded-md bg-sky-600 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50"
+                  >
+                    {t.common.save}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAddingTemplate(false);
+                      setNewTemplateName("");
+                    }}
+                    className="rounded-md border border-edge2 px-2.5 py-1 text-xs text-soft hover:text-ink"
+                  >
+                    {t.aiAgent.cancel}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingTemplate(true)}
+                className="flex items-center justify-center rounded-lg border border-dashed border-edge3 p-3 text-sm text-faint transition-colors hover:border-sky-500/60 hover:text-sky-600"
+              >
+                + {t.aiAgent.newTemplate}
+              </button>
+            ))}
         </div>
       </div>
 
@@ -252,6 +356,11 @@ export default function AiAgentPage() {
 
         <div className="mt-4 flex items-center gap-3">
           <button onClick={save} className={btnCls}>{t.aiAgent.save}</button>
+          {activeTemplateId === "custom" && customTemplates.length < MAX_CUSTOM_TEMPLATES && !addingTemplate && (
+            <button onClick={() => setAddingTemplate(true)} className={ghostBtnCls}>
+              {t.aiAgent.saveAsTemplate}
+            </button>
+          )}
         </div>
       </div>
 
