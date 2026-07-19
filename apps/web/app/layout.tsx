@@ -34,7 +34,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
         <body>
-          <LanguageProvider lang={lang}>{children}</LanguageProvider>
+          <LanguageProvider lang={lang}>
+            <ToastProvider>{children}</ToastProvider>
+          </LanguageProvider>
         </body>
       </html>
     );

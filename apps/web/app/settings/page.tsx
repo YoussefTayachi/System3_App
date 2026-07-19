@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const { push } = useToast();
   const { workspaceId } = useWorkspace();
   const [saved, setSaved] = useState<string[]>([]);
+  const [keyHints, setKeyHints] = useState<Record<string, string>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, string>>({});
   const [removing, setRemoving] = useState<string | null>(null);
@@ -29,9 +30,12 @@ export default function SettingsPage() {
     const supabase = createClient();
     supabase
       .from("api_keys")
-      .select("provider")
+      .select("provider, key_hint")
       .eq("workspace_id", workspaceId)
-      .then(({ data }) => setSaved((data ?? []).map((r) => r.provider)));
+      .then(({ data }) => {
+        setSaved((data ?? []).map((r) => r.provider));
+        setKeyHints(Object.fromEntries((data ?? []).map((r) => [r.provider, r.key_hint ?? ""])));
+      });
   }, [workspaceId]);
 
   const [brandName, setBrandName] = useState("");
@@ -91,8 +95,10 @@ export default function SettingsPage() {
       body: JSON.stringify({ provider, key }),
     });
     if (res.ok) {
+      const body = await res.json().catch(() => ({}));
       setStatus((s) => ({ ...s, [provider]: t.settings.encryptedOk }));
       setSaved((p) => (p.includes(provider) ? p : [...p, provider]));
+      if (body.key_hint) setKeyHints((h) => ({ ...h, [provider]: body.key_hint }));
       setValues((v) => ({ ...v, [provider]: "" }));
       push(providerLabels[provider] + ": " + t.settings.encryptedOk, "success");
     } else {
@@ -113,6 +119,11 @@ export default function SettingsPage() {
     setRemoving(null);
     if (res.ok) {
       setSaved((p) => p.filter((x) => x !== provider));
+      setKeyHints((h) => {
+        const next = { ...h };
+        delete next[provider];
+        return next;
+      });
       setStatus((s) => ({ ...s, [provider]: "" }));
       push(providerLabels[provider] + ": " + t.settings.removed, "success");
     } else {
@@ -145,9 +156,14 @@ export default function SettingsPage() {
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-medium text-ink">{providerLabels[p]}</h3>
                 {saved.includes(p) && (
-                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    {t.settings.saved}
+                  <span className="flex items-center gap-2">
+                    {keyHints[p] && (
+                      <code className="rounded bg-panel2 px-1.5 py-0.5 font-mono text-[11px] text-mute">{keyHints[p]}</code>
+                    )}
+                    <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      {t.settings.saved}
+                    </span>
                   </span>
                 )}
               </div>

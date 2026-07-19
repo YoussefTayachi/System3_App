@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "./language-provider";
+import { useToast } from "./toast-provider";
 
 const INDUSTRIES = [
   "Insurance", "Financial Services", "Banking", "Accounting", "Legal Services",
@@ -43,6 +44,7 @@ const labelCls = "flex flex-col text-sm font-medium text-soft";
 export default function NewSearchForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const { t } = useT();
+  const { push } = useToast();
   const [mode, setMode] = useState<"maps" | "corporate">("maps");
   const [listName, setListName] = useState("");
   const [schedule, setSchedule] = useState("none");
@@ -58,13 +60,11 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
   const [painPointNoWebsite, setPainPointNoWebsite] = useState(false);
   const [painPointMaxRating, setPainPointMaxRating] = useState<number | "">("");
   const [selectedPlaybook, setSelectedPlaybook] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     const nextRun =
       schedule === "daily"
         ? new Date(Date.now() + 86400000).toISOString()
@@ -99,7 +99,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     const { error } = await createClient().from("searches").insert(row);
     setLoading(false);
     if (error) {
-      setError(error.message);
+      push(error.message, "error");
       return;
     }
     setQuery(""); setLocation(""); setKeywords(""); setCity(""); setListName("");
@@ -267,7 +267,6 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       {mode === "corporate" && (
         <p className="text-xs text-mute">{t.newSearchForm.corporateHint}</p>
       )}
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </form>
   );
 

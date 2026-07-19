@@ -3,23 +3,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "../language-provider";
+import { useToast } from "../toast-provider";
 
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useT();
+  const { push } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     const { error } = await createClient().auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(t.login.failed + error.message);
+      push(t.login.failed + error.message, "error");
       return;
     }
     router.push("/");
@@ -47,7 +47,6 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-edge2 bg-field px-3 py-2.5 text-sm text-ink placeholder-mute outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/5"
             />
-            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <button
               disabled={loading}
               className="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-surface shadow-sm transition-all hover:opacity-85 active:scale-[0.99] disabled:opacity-50"

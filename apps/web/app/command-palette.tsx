@@ -30,6 +30,7 @@ export default function CommandPalette() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BizResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | undefined>(undefined);
 
@@ -46,11 +47,27 @@ export default function CommandPalette() {
     i.label.toLowerCase().includes(query.trim().toLowerCase())
   );
 
+  const showBusinesses = query.trim().length >= 2;
+  const entries = [
+    ...matchedItems.map((i) => ({ key: `page-${i.href}`, goTo: () => goTo(i.href) })),
+    ...(showBusinesses
+      ? results.map((r) => ({ key: `biz-${r.id}`, goTo: () => goTo(`/leads?q=${encodeURIComponent(r.name)}`) }))
+      : []),
+  ];
+
   const close = useCallback(() => {
     setOpen(false);
     setQuery("");
     setResults([]);
+    setActiveIndex(0);
   }, []);
+
+  // Aktive Auswahl zuruecksetzen, sobald sich die Trefferliste aendert (neue
+  // Eingabe oder neue Firmen-Ergebnisse), sonst zeigt der Pfeiltasten-Fokus
+  // irgendwann auf einen Index, der gar nicht mehr existiert.
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, results]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -118,6 +135,18 @@ export default function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (entries.length > 0) setActiveIndex((i) => (i + 1) % entries.length);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (entries.length > 0) setActiveIndex((i) => (i - 1 + entries.length) % entries.length);
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                entries[activeIndex]?.goTo();
+              }
+            }}
             placeholder={t.commandPalette.placeholder}
             className="w-full bg-transparent text-sm text-ink placeholder-mute outline-none"
           />
@@ -128,11 +157,15 @@ export default function CommandPalette() {
           <p className="px-2 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wide text-mute">
             {t.commandPalette.pagesHeading}
           </p>
-          {matchedItems.map(({ href, label, icon: Icon }) => (
+          {matchedItems.map(({ href, label, icon: Icon }, i) => (
             <button
               key={href}
               onClick={() => goTo(href)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-ink transition-colors hover:bg-wash"
+              onMouseEnter={() => setActiveIndex(i)}
+              className={
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-ink transition-colors " +
+                (i === activeIndex ? "bg-wash" : "hover:bg-wash")
+              }
             >
               <Icon className="h-4 w-4 text-faint" />
               {label}
@@ -149,16 +182,23 @@ export default function CommandPalette() {
               </p>
               {loading && <p className="px-3 py-2 text-sm text-faint">{t.commandPalette.searching}</p>}
               {!loading &&
-                results.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => goTo(`/leads?q=${encodeURIComponent(r.name)}`)}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-ink transition-colors hover:bg-wash"
-                  >
-                    <IconLeads className="h-4 w-4 text-faint" />
-                    <span className="truncate">{r.name}</span>
-                  </button>
-                ))}
+                results.map((r, i) => {
+                  const entryIndex = matchedItems.length + i;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => goTo(`/leads?q=${encodeURIComponent(r.name)}`)}
+                      onMouseEnter={() => setActiveIndex(entryIndex)}
+                      className={
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-ink transition-colors " +
+                        (entryIndex === activeIndex ? "bg-wash" : "hover:bg-wash")
+                      }
+                    >
+                      <IconLeads className="h-4 w-4 text-faint" />
+                      <span className="truncate">{r.name}</span>
+                    </button>
+                  );
+                })}
               {!loading && results.length === 0 && (
                 <p className="px-3 py-2 text-sm text-faint">{t.commandPalette.noResults}</p>
               )}
