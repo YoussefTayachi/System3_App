@@ -1,7 +1,7 @@
 // Muss inhaltlich mit apps/worker/worker/pipelines/personalize.py (DEFAULT_*) uebereinstimmen --
 // beide Seiten (Worker-Produktion, Web-Live-Test) sollen mit denselben Vorgaben rechnen.
 
-export const DEFAULT_PROMPT = `Deine Aufgabe ist es, einen einzelnen, vertrieblich messerscharfen Aufhänger (Icebreaker) für eine Cold-Email zu generieren, der beweist, dass du die Welt des potenziellen Kunden tatsächlich verstehst.
+export const DEFAULT_PROMPT_DE = `Deine Aufgabe ist es, einen einzelnen, vertrieblich messerscharfen Aufhänger (Icebreaker) für eine Cold-Email zu generieren, der beweist, dass du die Welt des potenziellen Kunden tatsächlich verstehst.
 Regeln für den Icebreaker:
 - Nutze ausschließlich spezifische, überprüfbare Fakten aus der Recherche und anderen Datenfeldern (Rolle, Unternehmen, Nische, Standort, Historie, Angebote, Projekte etc.).
 - Tonalität: direkt, selbstbewusst, geschäftsmäßig. Eine gewisse Schärfe ist völlig in Ordnung. Kein Slang, kein Hype.
@@ -15,6 +15,28 @@ Folge dem Ausgabeformat immer ganz genau.
 -Beende den Icebreaker damit, dass du dich deswegen meldest und nutze verschiedene Varianten zb:"Dachte ich melde mich mal", "Deswegen wollte ich uns connecten", "Deshalb wollte ich dir mal schreiben" etc..
 
 Schreibe standardmäßig auf Deutsch, außer diese Vorgaben verlangen hier ausdrücklich eine andere Sprache.`;
+
+export const DEFAULT_PROMPT_EN = `Your task is to generate a single, commercially razor-sharp opening line (icebreaker) for a cold email that proves you genuinely understand the prospect's world.
+Rules for the icebreaker:
+- Use only specific, verifiable facts from the research and other data fields (role, company, niche, location, history, offerings, projects, etc.).
+- Tone: direct, confident, business-like. A bit of edge is completely fine. No slang, no hype.
+- Do NOT mention LinkedIn, Google, "I saw", "I noticed", "I found", or any other reference to your research process. Just state the fact directly.
+- Do NOT include the prospect's name, your own name, greetings, or sign-offs.
+- You may hint at commercial interest, dynamics, or leverage (e.g. outlasting competitors, choosing tailored solutions over mass-market ones, doubling down on a niche, protecting capacity), but you must NOT describe or pitch your own service or solution.
+- The sentence should feel like a sharp observation you'd make right before a serious sales question.
+- Be specific. Avoid vague praise. Anchor the statement in something time-bound, location-bound, or model-bound (e.g. what changed, what they doubled down on, what they kept going while others stopped).
+Follow the output format exactly every time.
+-Always write in the informal "you" form and make the icebreaker sound personal.
+-End the icebreaker by implying that's why you're reaching out, using varied phrasing, e.g.: "Thought I'd reach out", "That's why I wanted to connect", "That's why I wanted to drop you a line", etc.
+
+Write in English by default, unless these instructions explicitly require another language.`;
+
+export function getDefaultPrompt(lang: "de" | "en"): string {
+  return lang === "en" ? DEFAULT_PROMPT_EN : DEFAULT_PROMPT_DE;
+}
+
+// Rueckwaertskompatibler Alias, falls irgendwo noch ohne Sprachauswahl importiert wird.
+export const DEFAULT_PROMPT = DEFAULT_PROMPT_DE;
 
 export const DEFAULT_MAX_WORDS = 22;
 

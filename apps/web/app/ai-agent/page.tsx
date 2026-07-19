@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_BANNED_WORDS,
   DEFAULT_MAX_WORDS,
-  DEFAULT_PROMPT,
+  getDefaultPrompt,
 } from "@/lib/personalization-defaults";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
@@ -35,15 +35,16 @@ export default function AiAgentPage() {
   const { t, lang } = useT();
   const { push } = useToast();
   const [wsId, setWsId] = useState<string | null>(null);
-  const [systemPrompt, setSystemPrompt] = useState(DEFAULT_PROMPT);
+  const [systemPrompt, setSystemPrompt] = useState("");
   const [source, setSource] = useState<string>("company_summary");
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS);
   const [bannedWordsText, setBannedWordsText] = useState(DEFAULT_BANNED_WORDS.join(", "));
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("default");
 
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
   const [addingTemplate, setAddingTemplate] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
-  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [savingNewTemplate, setSavingNewTemplate] = useState(false);
 
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
   const [testBusinessId, setTestBusinessId] = useState("");
@@ -62,10 +63,16 @@ export default function AiAgentPage() {
       .then(({ data }) => {
         if (!data) return;
         setWsId(data.id);
-        setSystemPrompt(data.personalization_prompt || DEFAULT_PROMPT);
         setSource(data.personalization_source || "company_summary");
         setMaxWords(data.personalization_max_words || DEFAULT_MAX_WORDS);
         setBannedWordsText(data.personalization_banned_words || DEFAULT_BANNED_WORDS.join(", "));
+        if (data.personalization_prompt) {
+          setSystemPrompt(data.personalization_prompt);
+          setSelectedTemplateId("custom");
+        } else {
+          setSystemPrompt(getDefaultPrompt(lang));
+          setSelectedTemplateId("default");
+        }
       });
     supabase
       .from("businesses")
@@ -75,7 +82,26 @@ export default function AiAgentPage() {
       .limit(100)
       .then(({ data }) => setBusinesses(data ?? []));
     loadTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Wenn die Standard-Vorlage aktiv ist, zeigt das Textfeld den Prompt in der
+  // aktuellen UI-Sprache. Beim Sprachwechsel live mitziehen.
+  useEffect(() => {
+    if (selectedTemplateId === "default") {
+      setSystemPrompt(getDefaultPrompt(lang));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
+  // Reconcile: falls ein gespeicherter Custom-Prompt zu einer geladenen Vorlage passt,
+  // die passende Karte als aktiv markieren statt generisch "Eigene Vorlage".
+  useEffect(() => {
+    if (selectedTemplateId !== "custom") return;
+    const match = customTemplates.find((tpl) => tpl.prompt.trim() === systemPrompt.trim() && tpl.prompt.trim() !== "");
+    if (match) setSelectedTemplateId(match.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customTemplates]);
 
   async function loadTemplates() {
     const supabase = createClient();
@@ -86,34 +112,32 @@ export default function AiAgentPage() {
     setCustomTemplates(data ?? []);
   }
 
-  function resetToDefault() {
-    setSystemPrompt(DEFAULT_PROMPT);
+  function selectDefault() {
+    setSelectedTemplateId("default");
+    setSystemPrompt(getDefaultPrompt(lang));
     setMaxWords(DEFAULT_MAX_WORDS);
     setBannedWordsText(DEFAULT_BANNED_WORDS.join(", "));
   }
 
-  function applyCustomTemplate(tpl: CustomTemplate) {
+  function selectCustomTemplate(tpl: CustomTemplate) {
+    setSelectedTemplateId(tpl.id);
     setSystemPrompt(tpl.prompt);
     setMaxWords(tpl.max_words);
     setBannedWordsText(tpl.banned_words);
   }
 
-  const matchedCustom = customTemplates.find((tpl) => tpl.prompt.trim() === systemPrompt.trim());
-  const activeTemplateId =
-    systemPrompt.trim() === DEFAULT_PROMPT.trim() ? "default" : matchedCustom?.id ?? "custom";
-
-  async function saveNewTemplate() {
+  async function createTemplate() {
     if (!wsId || !newTemplateName.trim() || customTemplates.length >= MAX_CUSTOM_TEMPLATES) return;
-    setSavingTemplate(true);
+    setSavingNewTemplate(true);
     const supabase = createClient();
     const { error } = await supabase.from("personalization_templates").insert({
       workspace_id: wsId,
       name: newTemplateName.trim(),
-      prompt: systemPrompt.trim(),
-      max_words: maxWords,
-      banned_words: bannedWordsText.trim(),
+      prompt: "",
+      max_words: DEFAULT_MAX_WORDS,
+      banned_words: DEFAULT_BANNED_WORDS.join(", "),
     });
-    setSavingTemplate(false);
+    setSavingNewTemplate(false);
     if (error) {
       push(t.common.error + error.message, "error");
       return;
@@ -133,6 +157,7 @@ export default function AiAgentPage() {
       push(t.common.error + error.message, "error");
       return;
     }
+    if (selectedTemplateId === id) selectDefault();
     push(t.aiAgent.templateDeleted, "success");
     loadTemplates();
   }
@@ -140,17 +165,37 @@ export default function AiAgentPage() {
   async function save() {
     if (!wsId) return;
     const supabase = createClient();
+    const isCustomTemplateSelected = customTemplates.some((tpl) => tpl.id === selectedTemplateId);
+
     const { error } = await supabase
       .from("workspaces")
       .update({
-        personalization_prompt: systemPrompt.trim() === DEFAULT_PROMPT.trim() ? null : systemPrompt.trim(),
+        personalization_prompt: systemPrompt.trim() === getDefaultPrompt(lang).trim() ? null : systemPrompt.trim(),
         personalization_source: source,
         personalization_max_words: maxWords,
         personalization_banned_words:
           bannedWordsText.trim() === DEFAULT_BANNED_WORDS.join(", ") ? null : bannedWordsText.trim(),
       })
       .eq("id", wsId);
-    push(error ? t.common.error + error.message : t.common.savedOk, error ? "error" : "success");
+
+    if (error) {
+      push(t.common.error + error.message, "error");
+      return;
+    }
+
+    if (isCustomTemplateSelected) {
+      await supabase
+        .from("personalization_templates")
+        .update({
+          prompt: systemPrompt.trim(),
+          max_words: maxWords,
+          banned_words: bannedWordsText.trim(),
+        })
+        .eq("id", selectedTemplateId);
+      loadTemplates();
+    }
+
+    push(t.common.savedOk, "success");
   }
 
   async function runTest() {
@@ -224,7 +269,7 @@ export default function AiAgentPage() {
           <label
             className={
               "cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
-              (activeTemplateId === "default"
+              (selectedTemplateId === "default"
                 ? "border-sky-500/60 bg-sky-500/5"
                 : "border-edge2 hover:border-edge3")
             }
@@ -233,8 +278,8 @@ export default function AiAgentPage() {
               <input
                 type="radio"
                 name="template"
-                checked={activeTemplateId === "default"}
-                onChange={resetToDefault}
+                checked={selectedTemplateId === "default"}
+                onChange={selectDefault}
                 className="h-3.5 w-3.5 accent-sky-500"
               />
               <span className="font-medium text-ink">{t.aiAgent.thawTemplateLabel}</span>
@@ -250,7 +295,7 @@ export default function AiAgentPage() {
               key={tpl.id}
               className={
                 "group relative cursor-pointer rounded-lg border p-3 text-sm transition-colors " +
-                (activeTemplateId === tpl.id
+                (selectedTemplateId === tpl.id
                   ? "border-sky-500/60 bg-sky-500/5"
                   : "border-edge2 hover:border-edge3")
               }
@@ -259,12 +304,15 @@ export default function AiAgentPage() {
                 <input
                   type="radio"
                   name="template"
-                  checked={activeTemplateId === tpl.id}
-                  onChange={() => applyCustomTemplate(tpl)}
+                  checked={selectedTemplateId === tpl.id}
+                  onChange={() => selectCustomTemplate(tpl)}
                   className="h-3.5 w-3.5 accent-sky-500"
                 />
                 <span className="truncate font-medium text-ink">{tpl.name}</span>
               </div>
+              {!tpl.prompt && (
+                <p className="mt-1 text-xs text-faint">{t.aiAgent.emptyTemplateHint}</p>
+              )}
               <button
                 type="button"
                 onClick={(e) => deleteTemplate(tpl.id, e)}
@@ -288,8 +336,8 @@ export default function AiAgentPage() {
                 />
                 <div className="mt-2 flex gap-2">
                   <button
-                    onClick={saveNewTemplate}
-                    disabled={!newTemplateName.trim() || savingTemplate}
+                    onClick={createTemplate}
+                    disabled={!newTemplateName.trim() || savingNewTemplate}
                     className="rounded-md bg-sky-600 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50"
                   >
                     {t.common.save}
@@ -320,7 +368,7 @@ export default function AiAgentPage() {
       <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="font-medium text-ink">{t.aiAgent.promptHeading}</h2>
-          <button onClick={resetToDefault} className="text-xs text-faint hover:text-ink">
+          <button onClick={selectDefault} className="text-xs text-faint hover:text-ink">
             {t.aiAgent.resetToDefault}
           </button>
         </div>
@@ -329,6 +377,7 @@ export default function AiAgentPage() {
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
           rows={14}
+          placeholder={selectedTemplateId !== "default" ? t.aiAgent.emptyTemplateHint : ""}
           className={inputCls + " w-full resize-y font-mono text-[13px] leading-relaxed"}
         />
 
@@ -356,11 +405,6 @@ export default function AiAgentPage() {
 
         <div className="mt-4 flex items-center gap-3">
           <button onClick={save} className={btnCls}>{t.aiAgent.save}</button>
-          {activeTemplateId === "custom" && customTemplates.length < MAX_CUSTOM_TEMPLATES && !addingTemplate && (
-            <button onClick={() => setAddingTemplate(true)} className={ghostBtnCls}>
-              {t.aiAgent.saveAsTemplate}
-            </button>
-          )}
         </div>
       </div>
 
