@@ -377,6 +377,9 @@ export default function LeadsTable({
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Group | null>(null);
+  const [drawerReplies, setDrawerReplies] = useState<
+    { id: string; contact_id: string; subject: string | null; body: string | null; ai_interest: string | null; sent_at: string | null }[]
+  >([]);
   const [cols, setCols] = useState<Set<string>>(new Set(ALL_COLUMN_IDS));
   const [colsOpen, setColsOpen] = useState(false);
   const colsRef = useRef<HTMLDivElement>(null);
@@ -462,6 +465,21 @@ export default function LeadsTable({
   );
   const selectedGroups = filtered.filter((g) => selected.has(g.key));
   const selectedContacts = selectedGroups.reduce((n, g) => n + g.contacts.length, 0);
+
+  async function openDrawer(g: Group) {
+    setDrawer(g);
+    setDrawerReplies([]);
+    const contactIds = g.contacts.map((c) => c.id);
+    if (contactIds.length === 0) return;
+    const { data } = await createClient()
+      .from("messages")
+      .select("id, contact_id, subject, body, ai_interest, sent_at")
+      .eq("workspace_id", workspaceId)
+      .eq("direction", "inbound")
+      .in("contact_id", contactIds)
+      .order("sent_at", { ascending: false });
+    setDrawerReplies(data ?? []);
+  }
 
   function toggle(key: string) {
     setOpen((prev) => {
@@ -731,7 +749,7 @@ export default function LeadsTable({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDrawer(g)}
+                    onClick={() => openDrawer(g)}
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left"
                   >
                     <CompanyLogo name={g.name} website={g.website} size={22} />
@@ -963,6 +981,38 @@ export default function LeadsTable({
                 <p className="mb-5 rounded-lg border-l-2 border-sky-500/50 bg-sky-500/5 p-3 text-sm italic leading-relaxed text-soft">
                   {drawer.personalization}
                 </p>
+              </>
+            )}
+
+            {drawerReplies.length > 0 && (
+              <>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">
+                  {L.repliesHeading(drawerReplies.length)}
+                </p>
+                <div className="mb-5 space-y-2">
+                  {drawerReplies.map((r) => (
+                    <div key={r.id} className="rounded-lg border border-edge/60 bg-surface/60 p-3">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <p className="truncate text-xs font-medium text-ink">{r.subject || L.noSubject}</p>
+                        {r.ai_interest && (
+                          <span
+                            className={
+                              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium " +
+                              (r.ai_interest === "interested"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+                                : r.ai_interest === "not_interested"
+                                ? "bg-red-500/10 text-red-600 dark:text-red-300"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-300")
+                            }
+                          >
+                            {L.aiInterestLabels[r.ai_interest] ?? r.ai_interest}
+                          </span>
+                        )}
+                      </div>
+                      <p className="line-clamp-3 text-xs leading-relaxed text-soft">{r.body}</p>
+                    </div>
+                  ))}
+                </div>
               </>
             )}
 

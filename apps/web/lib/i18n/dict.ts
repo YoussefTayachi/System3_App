@@ -104,6 +104,10 @@ const de = {
     scheduleWeekly: "Abo: wöchentlich",
     scheduleDaily: "Abo: täglich",
     scheduleTooltip: "Lead-Abo: Liste automatisch mit neuen Firmen nachfüllen",
+    instantlyLink: "Mit Instantly verknüpfen",
+    instantlyLinked: "Mit Instantly verknüpft",
+    instantlyTooltip: "Instantly-Kampagnen-ID hinterlegen, damit Antworten/Öffnungen/Bounces automatisch zurückgeholt werden",
+    instantlyPlaceholder: "Instantly-Kampagnen-ID",
   },
   searchDetail: {
     back: "← Alle Suchen",
@@ -210,6 +214,11 @@ const de = {
     companySummaryHeading: "Firmenbeschreibung",
     personalizationHeading: "Personalisierung",
     contactsHeading: (n: number) => `Kontakte (${n})`,
+    repliesHeading: (n: number) => `Antworten (${n})`,
+    noSubject: "(kein Betreff)",
+    aiInterestLabels: {
+      interested: "Interessiert", not_interested: "Kein Interesse", question: "Rückfrage",
+    } as Record<string, string>,
     linkedinProfile: "LinkedIn-Profil →",
     verifiedEmail: "Verifizierte E-Mail",
     confidenceSuffix: "% Confidence",
@@ -257,6 +266,7 @@ const de = {
       openai: "Key beginnt mit sk-",
       hunter: "Für E-Mail-Suche nach Entscheidern",
       neverbounce: "Optional -- für die E-Mail-Verifizierung auf der Leads-Seite",
+      instantly: "Optional -- holt Antworten/Öffnungen/Bounces aus Instantly zurück (Growth-Plan reicht)",
     } as Record<string, string>,
     integrations: [
       { name: "Instantly", note: "CSV-Import, Auto-Mapping" },
@@ -411,6 +421,10 @@ const en: Dictionary = {
     scheduleWeekly: "Subscription: weekly",
     scheduleDaily: "Subscription: daily",
     scheduleTooltip: "Lead subscription: automatically refill this list with new companies",
+    instantlyLink: "Link to Instantly",
+    instantlyLinked: "Linked to Instantly",
+    instantlyTooltip: "Store the Instantly campaign ID so replies/opens/bounces get pulled back automatically",
+    instantlyPlaceholder: "Instantly campaign ID",
   },
   searchDetail: {
     back: "← All searches",
@@ -517,6 +531,11 @@ const en: Dictionary = {
     companySummaryHeading: "Company summary",
     personalizationHeading: "Personalization",
     contactsHeading: (n: number) => `Contacts (${n})`,
+    repliesHeading: (n: number) => `Replies (${n})`,
+    noSubject: "(no subject)",
+    aiInterestLabels: {
+      interested: "Interested", not_interested: "Not interested", question: "Question",
+    },
     linkedinProfile: "LinkedIn profile →",
     verifiedEmail: "Verified email",
     confidenceSuffix: "% confidence",
@@ -564,6 +583,7 @@ const en: Dictionary = {
       openai: "Key starts with sk-",
       hunter: "For email search of decision makers",
       neverbounce: "Optional -- for email verification on the leads page",
+      instantly: "Optional -- pulls replies/opens/bounces back from Instantly (Growth plan is enough)",
     },
     integrations: [
       { name: "Instantly", note: "CSV import, auto-mapping" },

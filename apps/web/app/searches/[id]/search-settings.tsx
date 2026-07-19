@@ -9,10 +9,12 @@ export default function SearchSettings({
   searchId,
   initialName,
   initialSchedule,
+  initialInstantlyCampaignId,
 }: {
   searchId: string;
   initialName: string;
   initialSchedule: string;
+  initialInstantlyCampaignId: string | null;
 }) {
   const router = useRouter();
   const { t } = useT();
@@ -20,6 +22,8 @@ export default function SearchSettings({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [schedule, setSchedule] = useState(initialSchedule);
+  const [editingInstantly, setEditingInstantly] = useState(false);
+  const [instantlyCampaignId, setInstantlyCampaignId] = useState(initialInstantlyCampaignId ?? "");
 
   async function saveName() {
     await createClient()
@@ -28,6 +32,16 @@ export default function SearchSettings({
       .eq("id", searchId)
       .eq("workspace_id", workspaceId);
     setEditing(false);
+    router.refresh();
+  }
+
+  async function saveInstantlyCampaignId() {
+    await createClient()
+      .from("searches")
+      .update({ instantly_campaign_id: instantlyCampaignId.trim() || null })
+      .eq("id", searchId)
+      .eq("workspace_id", workspaceId);
+    setEditingInstantly(false);
     router.refresh();
   }
 
@@ -84,6 +98,35 @@ export default function SearchSettings({
         <option value="weekly">{t.searchSettings.scheduleWeekly}</option>
         <option value="daily">{t.searchSettings.scheduleDaily}</option>
       </select>
+
+      {editingInstantly ? (
+        <span className="flex items-center gap-1.5">
+          <input
+            value={instantlyCampaignId}
+            onChange={(e) => setInstantlyCampaignId(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && saveInstantlyCampaignId()}
+            autoFocus
+            placeholder={t.searchSettings.instantlyPlaceholder}
+            className="w-56 rounded-lg border border-edge2 bg-field px-2.5 py-1.5 text-xs text-ink outline-none focus:border-sky-500"
+          />
+          <button onClick={saveInstantlyCampaignId} className="text-xs text-sky-600 dark:text-sky-300 hover:text-sky-500 dark:hover:text-sky-200">
+            {t.searchSettings.save}
+          </button>
+        </span>
+      ) : (
+        <button
+          onClick={() => setEditingInstantly(true)}
+          title={t.searchSettings.instantlyTooltip}
+          className={
+            "rounded-lg border px-2.5 py-1.5 text-xs transition-colors " +
+            (initialInstantlyCampaignId
+              ? "border-sky-500/30 bg-sky-500/10 text-sky-600 hover:border-sky-500/60 dark:text-sky-300"
+              : "border-dashed border-edge3 text-faint hover:border-sky-500/60 hover:text-sky-600 dark:hover:text-sky-400")
+          }
+        >
+          {initialInstantlyCampaignId ? t.searchSettings.instantlyLinked : t.searchSettings.instantlyLink}
+        </button>
+      )}
     </div>
   );
 }
