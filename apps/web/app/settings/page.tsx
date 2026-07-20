@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { IconLock } from "../icons";
+import InstantlyMailboxes from "./instantly-mailboxes";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { useWorkspace } from "../workspace-provider";
@@ -214,6 +215,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </div>
+
+      <InstantlyMailboxes hasInstantlyKey={saved.includes("instantly")} />
 
       <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <h2 className="font-medium text-ink">{t.branding.heading}</h2>
