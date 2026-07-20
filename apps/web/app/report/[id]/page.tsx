@@ -103,7 +103,7 @@ export default async function WorkspaceReportPage({
         <p className="mt-10 text-center text-xs text-neutral-400">
           {t.poweredBy} ·{" "}
           <span className="font-semibold" style={{ color: brandColor }}>
-            thaw
+            frostbreaker
           </span>
         </p>
       </div>

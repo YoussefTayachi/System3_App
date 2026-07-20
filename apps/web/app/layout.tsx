@@ -13,7 +13,7 @@ import { WorkspaceProvider } from "./workspace-provider";
 import WorkspaceSwitcher from "./workspace-switcher";
 
 export const metadata = {
-  title: "Thaw · Lead-Gen & Outreach",
+  title: "Frostbreaker · Lead-Gen & Outreach",
   description: "B2B Leads finden, anreichern und kontaktieren",
 };
 
@@ -76,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="flex min-h-screen">
               <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
                 <div className="mb-4 flex items-center gap-2 px-2">
-                  <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
+                  <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
                 </div>
                 <WorkspaceSwitcher className="mb-3" />
                 <CommandPaletteTrigger />
@@ -98,7 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </aside>
               <div className="min-w-0 flex-1 md:pl-64">
                 <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
-                  <span className="shrink-0 text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">thaw</span>
+                  <span className="shrink-0 text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
                   <div className="min-w-0 flex-1">
                     <WorkspaceSwitcher />
                   </div>
