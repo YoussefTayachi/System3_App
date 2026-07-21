@@ -334,6 +334,15 @@ const de = {
       oauthUnexpectedResponse: "Unerwartete Antwort von Instantly",
       emailPlaceholder: "mailbox@deinedomain.com",
       dailyLimitPlaceholder: "Tageslimit",
+      bulkUpload: "CSV-Bulk-Upload",
+      bulkUploading: "Importiere…",
+      bulkTemplate: "Vorlage herunterladen",
+      bulkEmptyFile: "CSV ist leer oder konnte nicht gelesen werden.",
+      bulkAllFailed: "Kein einziger Eintrag konnte importiert werden -- siehe Fehlerliste unten.",
+      bulkDone: (ok: number, failed: number) =>
+        failed > 0 ? `${ok} Mailbox(en) verbunden, ${failed} fehlgeschlagen` : `${ok} Mailbox(en) verbunden`,
+      bulkResultsHeading: "Ergebnis des Imports",
+      bulkRowWithoutEmail: "(keine E-Mail-Adresse)",
     },
     integrations: [
       { name: "Instantly", note: "CSV-Import, Auto-Mapping" },
@@ -745,6 +754,15 @@ const en: Dictionary = {
       oauthUnexpectedResponse: "Unexpected response from Instantly",
       emailPlaceholder: "mailbox@yourdomain.com",
       dailyLimitPlaceholder: "Daily limit",
+      bulkUpload: "CSV bulk upload",
+      bulkUploading: "Importing…",
+      bulkTemplate: "Download template",
+      bulkEmptyFile: "CSV is empty or could not be read.",
+      bulkAllFailed: "No rows could be imported -- see error list below.",
+      bulkDone: (ok: number, failed: number) =>
+        failed > 0 ? `${ok} mailbox(es) connected, ${failed} failed` : `${ok} mailbox(es) connected`,
+      bulkResultsHeading: "Import results",
+      bulkRowWithoutEmail: "(no email address)",
     },
     integrations: [
       { name: "Instantly", note: "CSV import, auto-mapping" },

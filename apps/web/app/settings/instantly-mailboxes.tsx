@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { IconMail } from "../icons";
+import { parseCsvToObjects } from "@/lib/csv";
 
 type Account = {
   email: string;
@@ -12,6 +13,25 @@ type Account = {
   stat_warmup_score: number | null;
   daily_limit: number | null;
 };
+
+type BulkRowResult = { email: string; success: boolean; error?: string };
+
+// Spalten, die der CSV-Bulk-Upload erkennt (Reihenfolge egal, Header
+// case-insensitiv). smtp_username/smtp_password sind optional -- fehlen sie,
+// werden imap_username/imap_password uebernommen (typischer Fall: eine
+// Mailbox, ein Login fuer IMAP und SMTP).
+const CSV_TEMPLATE_HEADERS = [
+  "email", "first_name", "last_name",
+  "imap_host", "imap_port", "imap_username", "imap_password",
+  "smtp_host", "smtp_port", "smtp_username", "smtp_password",
+  "daily_limit",
+];
+const CSV_TEMPLATE_EXAMPLE = [
+  "youssef@marketing.frostbreaker.app", "Youssef", "Tayachi",
+  "imap.ionos.de", "993", "youssef@marketing.frostbreaker.app", "",
+  "smtp.ionos.de", "587", "", "",
+  "50",
+];
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
@@ -51,6 +71,9 @@ export default function InstantlyMailboxes({ hasInstantlyKey }: { hasInstantlyKe
     smtp_host: "", smtp_port: "587", smtp_username: "", smtp_password: "",
     daily_limit: "50",
   });
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResults, setBulkResults] = useState<BulkRowResult[] | null>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function loadAccounts() {
     setLoading(true);
@@ -82,6 +105,70 @@ export default function InstantlyMailboxes({ hasInstantlyKey }: { hasInstantlyKe
       loadAccounts();
     } else {
       push(t.common.error + (body.error ?? res.status), "error");
+    }
+  }
+
+  function downloadCsvTemplate() {
+    const csv = [CSV_TEMPLATE_HEADERS.join(","), CSV_TEMPLATE_EXAMPLE.join(",")].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "instantly-mailboxen-vorlage.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleBulkFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // erlaubt erneutes Auswaehlen derselben Datei
+    if (!file) return;
+
+    const text = await file.text();
+    const rows = parseCsvToObjects(text);
+    if (rows.length === 0) {
+      push(M.bulkEmptyFile, "error");
+      return;
+    }
+
+    // smtp_username/smtp_password-Fallback auf imap_* schon clientseitig
+    // aufloesen, damit die Vorschau/Fehlermeldungen konsistent mit dem sind,
+    // was tatsaechlich an Instantly geschickt wird.
+    const accounts = rows.map((row) => ({
+      email: row.email,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      imap_host: row.imap_host,
+      imap_port: row.imap_port,
+      imap_username: row.imap_username,
+      imap_password: row.imap_password,
+      smtp_host: row.smtp_host,
+      smtp_port: row.smtp_port,
+      smtp_username: row.smtp_username || row.imap_username,
+      smtp_password: row.smtp_password || row.imap_password,
+      daily_limit: row.daily_limit,
+    }));
+
+    setBulkBusy(true);
+    setBulkResults(null);
+    const res = await fetch("/api/instantly/accounts/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accounts }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setBulkBusy(false);
+
+    if (!res.ok) {
+      push(t.common.error + (body.error ?? res.status), "error");
+      return;
+    }
+    setBulkResults(body.results ?? []);
+    if (body.succeeded > 0) {
+      push(M.bulkDone(body.succeeded, body.failed ?? 0), body.failed > 0 ? "error" : "success");
+      loadAccounts();
+    } else {
+      push(M.bulkAllFailed, "error");
     }
   }
 
@@ -243,7 +330,43 @@ export default function InstantlyMailboxes({ hasInstantlyKey }: { hasInstantlyKe
         >
           {M.connectSmtp}
         </button>
+        <button
+          onClick={() => bulkFileInputRef.current?.click()}
+          disabled={bulkBusy}
+          className="rounded-lg border border-edge2 px-3.5 py-2 text-sm font-medium text-soft transition-colors hover:border-sky-500 hover:text-sky-600 disabled:opacity-50 dark:hover:text-sky-400"
+        >
+          {bulkBusy ? M.bulkUploading : M.bulkUpload}
+        </button>
+        <input ref={bulkFileInputRef} type="file" accept=".csv,text/csv" onChange={handleBulkFile} className="hidden" />
+        <button
+          onClick={downloadCsvTemplate}
+          className="rounded-lg px-3.5 py-2 text-sm font-medium text-faint underline-offset-2 transition-colors hover:text-sky-600 hover:underline dark:hover:text-sky-400"
+        >
+          {M.bulkTemplate}
+        </button>
       </div>
+
+      {bulkResults && (
+        <div className="mt-4 rounded-lg border border-edge2 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-ink">{M.bulkResultsHeading}</span>
+            <button onClick={() => setBulkResults(null)} className="text-xs text-faint hover:text-sky-600 dark:hover:text-sky-400">
+              ×
+            </button>
+          </div>
+          <div className="max-h-64 space-y-1.5 overflow-y-auto">
+            {bulkResults.map((r, i) => (
+              <div key={`${r.email}-${i}`} className="flex items-center gap-2 text-xs">
+                <span className={r.success ? "text-emerald-600 dark:text-emerald-300" : "text-red-600 dark:text-red-400"}>
+                  {r.success ? "✓" : "✕"}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-soft">{r.email || M.bulkRowWithoutEmail}</span>
+                {!r.success && <span className="text-faint">{r.error}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showForm === "smtp" && (
         <div className="mt-4 grid gap-3 rounded-lg border border-edge2 p-4 sm:grid-cols-2">
