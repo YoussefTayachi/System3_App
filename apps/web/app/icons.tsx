@@ -86,3 +86,11 @@ export function IconAgent({ className = "h-4 w-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function IconSend({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" />
+    </svg>
+  );
+}

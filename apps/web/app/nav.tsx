@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconAgent, IconDashboard, IconLeads, IconSearch, IconSettings, IconShield } from "./icons";
+import { IconAgent, IconDashboard, IconLeads, IconSearch, IconSend, IconSettings, IconShield } from "./icons";
 import { useT } from "./language-provider";
 
 export default function Nav() {
@@ -13,6 +13,7 @@ export default function Nav() {
     { href: "/searches", label: t.nav.searches, icon: IconSearch },
     { href: "/leads", label: t.nav.leads, icon: IconLeads },
     { href: "/ai-agent", label: t.nav.aiAgent, icon: IconAgent },
+    { href: "/instantly", label: t.nav.instantly, icon: IconSend },
     { href: "/blocklist", label: t.nav.blocklist, icon: IconShield },
     { href: "/settings", label: t.nav.settings, icon: IconSettings },
   ];

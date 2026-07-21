@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useT } from "../language-provider";
-import { useToast } from "../toast-provider";
-import { IconMail } from "../icons";
+import { useT } from "../../language-provider";
+import { useToast } from "../../toast-provider";
+import { IconMail } from "../../icons";
 import { parseCsvToObjects } from "@/lib/csv";
+import { inputCls } from "@/lib/ui";
+import Link from "next/link";
 
 type Account = {
   email: string;
@@ -32,10 +34,6 @@ const CSV_TEMPLATE_EXAMPLE = [
   "smtp.ionos.de", "587", "", "",
   "50",
 ];
-
-const inputCls =
-  "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
-  "placeholder-mute outline-none transition-colors focus:border-sky-500";
 
 const PROVIDER_LABELS: Record<number, string> = { 1: "IMAP/SMTP", 2: "Google", 3: "Microsoft", 4: "AWS" };
 const STATUS_LABELS: Record<number, { label: string; cls: string }> = {
@@ -258,7 +256,12 @@ export default function InstantlyMailboxes({ hasInstantlyKey }: { hasInstantlyKe
           <IconMail className="h-4 w-4 text-mute" />
           {M.heading}
         </h2>
-        <p className="mt-2 text-sm text-faint">{M.needsKey}</p>
+        <p className="mt-2 text-sm text-faint">
+          {M.needsKey}{" "}
+          <Link href="/instantly/connection" className="font-medium text-sky-600 hover:text-sky-500 dark:text-sky-400">
+            {t.instantly.subnav.connection} →
+          </Link>
+        </p>
       </div>
     );
   }

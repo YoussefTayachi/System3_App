@@ -1,40 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentWorkspace } from "@/lib/workspace/server";
-import { getInstantlyApiKey, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
+import { requireInstantlyContext, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
 
 // Provider-Codes laut Instantly API v2: 1=Custom IMAP/SMTP, 2=Google, 3=Microsoft, 4=AWS.
 // Fuer 2/3 nutzen wir stattdessen den OAuth-Flow (siehe app/api/instantly/oauth/*),
 // dieser Endpunkt hier deckt Custom IMAP/SMTP ab.
 
-async function requireKey(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "unauthorized" }, { status: 401 }) } as const;
-
-  const ws = await getCurrentWorkspace(supabase);
-  if (!ws) return { error: NextResponse.json({ error: "Kein Workspace" }, { status: 400 }) } as const;
-
-  const apiKey = await getInstantlyApiKey(supabase, ws.workspace.id);
-  if (!apiKey) {
-    return {
-      error: NextResponse.json(
-        { error: "Kein Instantly-API-Key in den Einstellungen hinterlegt." },
-        { status: 400 }
-      ),
-    } as const;
-  }
-  return { apiKey } as const;
-}
-
 export async function GET() {
   const supabase = await createClient();
-  const r = await requireKey(supabase);
-  if ("error" in r) return r.error;
+  const ctx = await requireInstantlyContext(supabase);
+  if ("error" in ctx) return ctx.error;
 
   try {
-    const data = await instantlyRequest(r.apiKey, "/api/v2/accounts?limit=100");
+    const data = await instantlyRequest(ctx.apiKey, "/api/v2/accounts?limit=100");
     return NextResponse.json(data);
   } catch (e) {
     const status = e instanceof InstantlyApiError ? e.status : 500;
@@ -44,8 +22,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const r = await requireKey(supabase);
-  if ("error" in r) return r.error;
+  const ctx = await requireInstantlyContext(supabase);
+  if ("error" in ctx) return ctx.error;
 
   const body = await req.json();
   const { email, first_name, last_name, imap_host, imap_port, imap_username, imap_password, smtp_host, smtp_port, smtp_username, smtp_password, daily_limit } = body;
@@ -54,7 +32,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const data = await instantlyRequest(r.apiKey, "/api/v2/accounts", {
+    const data = await instantlyRequest(ctx.apiKey, "/api/v2/accounts", {
       method: "POST",
       body: JSON.stringify({
         email,

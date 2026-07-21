@@ -1,5 +1,5 @@
 // Minimaler, abhaengigkeitsfreier CSV-Parser fuer den Instantly-Bulk-Mailbox-
-// Upload (siehe app/settings/instantly-mailboxes.tsx). Bewusst kein externes
+// Upload (siehe app/instantly/mailboxes/mailboxes-panel.tsx). Bewusst kein externes
 // Paket (papaparse etc.) fuer so eine kleine, gut abgrenzbare Aufgabe --
 // haelt die Bundle-Groesse und die Supply-Chain-Flaeche klein.
 //

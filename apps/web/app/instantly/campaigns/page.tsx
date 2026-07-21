@@ -1,0 +1,108 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useT } from "../../language-provider";
+import { STATUS_BADGE_CLS } from "@/lib/ui";
+
+type CampaignListItem = {
+  id: string;
+  name: string;
+  status: string;
+  mailboxes: string[];
+  searches: { name: string | null; query: string; location: string } | null;
+  stats: { reply_count_unique: number; emails_sent_count: number } | null;
+};
+
+export default function InstantlyCampaignsPage() {
+  const { t } = useT();
+  const C = t.instantly.campaigns;
+  const [items, setItems] = useState<CampaignListItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/instantly/campaigns")
+      .then(async (r) => {
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          setError(body.error ?? String(r.status));
+          return;
+        }
+        setItems(body.items ?? []);
+      })
+      .catch(() => setError(C.loadError));
+  }, [C.loadError]);
+
+  return (
+    <div className="max-w-4xl space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{C.title}</h1>
+          <p className="text-sm text-faint">{C.description}</p>
+        </div>
+        {items !== null && (
+          <Link
+            href="/instantly/campaigns/new"
+            className="rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-sky-600/25 transition-all hover:bg-sky-500"
+          >
+            {C.newButton}
+          </Link>
+        )}
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-edge/60 bg-panel p-6">
+          <p className="text-sm text-faint">
+            {C.needsKeyBody}{" "}
+            <Link href="/instantly/connection" className="font-medium text-sky-600 hover:text-sky-500 dark:text-sky-400">
+              {t.instantly.subnav.connection} →
+            </Link>
+          </p>
+        </div>
+      )}
+
+      {!error && items === null && <p className="text-sm text-faint">{t.common.saving}</p>}
+      {!error && items !== null && items.length === 0 && (
+        <div className="rounded-lg border border-dashed border-edge2 p-6 text-center">
+          <p className="text-sm text-faint">{C.empty}</p>
+        </div>
+      )}
+
+      {!error && items !== null && items.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-edge/60">
+          <table className="w-full text-sm">
+            <thead className="bg-panel2 text-left text-xs text-faint">
+              <tr>
+                <th className="px-4 py-2.5 font-medium">{C.columnName}</th>
+                <th className="px-4 py-2.5 font-medium">{C.columnSearch}</th>
+                <th className="px-4 py-2.5 font-medium">{C.columnStatus}</th>
+                <th className="px-4 py-2.5 font-medium">{C.columnMailboxes}</th>
+                <th className="px-4 py-2.5 font-medium">{C.columnReplies}</th>
+                <th className="px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((c) => (
+                <tr key={c.id} className="border-t border-edge/60">
+                  <td className="px-4 py-3 font-medium text-ink">{c.name}</td>
+                  <td className="px-4 py-3 text-faint">{c.searches?.name || c.searches?.query || "–"}</td>
+                  <td className="px-4 py-3">
+                    <span className={"rounded-full border px-2 py-0.5 text-[11px] " + (STATUS_BADGE_CLS[c.status] ?? "")}>
+                      {t.instantly.statusLabels[c.status as keyof typeof t.instantly.statusLabels] ?? c.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-faint">{c.mailboxes.length}</td>
+                  <td className="px-4 py-3 text-faint">{c.stats?.reply_count_unique ?? "–"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={`/instantly/campaigns/${c.id}`} className="text-xs font-medium text-sky-600 hover:text-sky-500 dark:text-sky-400">
+                      {C.manage}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

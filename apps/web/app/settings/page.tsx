@@ -1,13 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { IconLock } from "../icons";
-import InstantlyMailboxes from "./instantly-mailboxes";
+import { IconLock, IconSend } from "../icons";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { useWorkspace } from "../workspace-provider";
 
-const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce", "instantly"] as const;
+// Instantly (Mailboxen, Kampagnen, API-Key) lebt seit dem eigenen /instantly-
+// Bereich nicht mehr hier -- die anderen BYOK-Provider (reine Lookup-/
+// Anreicherungs-Keys ohne eigene Unterseiten) bleiben in den generischen
+// Einstellungen.
+const PROVIDER_IDS = ["google_maps", "openai", "hunter", "neverbounce"] as const;
 
 const inputCls =
   "rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink " +
@@ -135,7 +139,6 @@ export default function SettingsPage() {
 
   const providerLabels: Record<string, string> = {
     google_maps: "Google Maps", openai: "OpenAI", hunter: "Hunter.io", neverbounce: "NeverBounce",
-    instantly: "Instantly.ai",
   };
 
   return (
@@ -216,7 +219,19 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <InstantlyMailboxes hasInstantlyKey={saved.includes("instantly")} />
+      <Link
+        href="/instantly"
+        className="flex items-center justify-between rounded-lg border border-edge/60 bg-panel p-6 transition-all hover:-translate-y-0.5 hover:border-sky-500/50"
+      >
+        <span className="flex items-center gap-3">
+          <IconSend className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+          <span>
+            <span className="block font-medium text-ink">Instantly.ai</span>
+            <span className="block text-xs text-faint">API-Key, Mailboxen und Kampagnen jetzt im eigenen Bereich verwalten</span>
+          </span>
+        </span>
+        <span className="text-sm text-faint">→</span>
+      </Link>
 
       <div className="rounded-lg border border-edge/60 bg-panel p-6">
         <h2 className="font-medium text-ink">{t.branding.heading}</h2>

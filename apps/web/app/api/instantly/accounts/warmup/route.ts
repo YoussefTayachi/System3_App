@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentWorkspace } from "@/lib/workspace/server";
-import { getInstantlyApiKey, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
+import { requireInstantlyContext, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
 
 // Instantly fuehrt Warmup-Enable/Disable asynchron als Background Job aus
 // (Antwort ist ein Job-Objekt, kein sofortiger Endzustand). Fuer den Zweck
@@ -9,16 +8,8 @@ import { getInstantlyApiKey, instantlyRequest, InstantlyApiError } from "@/lib/i
 // warmup_status zeigt sich beim naechsten Laden der Konto-Liste.
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const ws = await getCurrentWorkspace(supabase);
-  if (!ws) return NextResponse.json({ error: "Kein Workspace" }, { status: 400 });
-
-  const apiKey = await getInstantlyApiKey(supabase, ws.workspace.id);
-  if (!apiKey) return NextResponse.json({ error: "Kein Instantly-API-Key hinterlegt." }, { status: 400 });
+  const ctx = await requireInstantlyContext(supabase);
+  if ("error" in ctx) return ctx.error;
 
   const { action, email } = await req.json();
   if (!email || (action !== "enable" && action !== "disable")) {
@@ -26,7 +17,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const data = await instantlyRequest(apiKey, `/api/v2/accounts/warmup/${action}`, {
+    const data = await instantlyRequest(ctx.apiKey, `/api/v2/accounts/warmup/${action}`, {
       method: "POST",
       body: JSON.stringify({ emails: [email] }),
     });

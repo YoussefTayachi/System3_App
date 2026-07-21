@@ -3,8 +3,10 @@
 // wie Google Maps/Hunter/OpenAI/NeverBounce), Thaw sendet nichts ueber einen
 // eigenen, zentralen Instantly-Account. Das haelt Haftung/Reputation pro
 // Kunde getrennt, siehe instantly_native_integration_plan.md Punkt 0.
+import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fernetDecrypt } from "./fernet";
+import { getCurrentWorkspace, type WorkspaceSummary } from "./workspace/server";
 
 const BASE_URL = "https://api.instantly.ai";
 
@@ -54,4 +56,40 @@ export async function instantlyRequest<T = unknown>(
     throw new InstantlyApiError(message, res.status);
   }
   return body as T;
+}
+
+/**
+ * Gemeinsamer Einstiegspunkt fuer so gut wie jede /api/instantly/*-Route:
+ * prueft Login, ermittelt den aktuellen Workspace und laedt dessen
+ * entschluesselten Instantly-Key. Vorher war dieser Block in jeder Route
+ * (accounts, accounts/bulk, accounts/[email], accounts/warmup, campaigns/*)
+ * separat kopiert -- an einer Stelle halten, damit z.B. eine Aenderung an der
+ * Fehlermeldung oder der Workspace-Ermittlung nicht in sechs Dateien
+ * synchron gehalten werden muss.
+ */
+export async function requireInstantlyContext(
+  supabase: SupabaseClient
+): Promise<
+  | { error: NextResponse }
+  | { user: { id: string }; workspace: WorkspaceSummary; apiKey: string }
+> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+
+  const ws = await getCurrentWorkspace(supabase);
+  if (!ws) return { error: NextResponse.json({ error: "Kein Workspace" }, { status: 400 }) };
+
+  const apiKey = await getInstantlyApiKey(supabase, ws.workspace.id);
+  if (!apiKey) {
+    return {
+      error: NextResponse.json(
+        { error: "Kein Instantly-API-Key in den Einstellungen hinterlegt." },
+        { status: 400 }
+      ),
+    };
+  }
+
+  return { user, workspace: ws.workspace, apiKey };
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentWorkspace } from "@/lib/workspace/server";
-import { getInstantlyApiKey, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
+import { requireInstantlyContext, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
 
 // CSV-Bulk-Upload fuer Instantly-Mailboxen (Custom IMAP/SMTP, provider_code 1).
 // Instantly selbst bietet keinen eigenen Bulk-Create-Endpoint fuer /accounts,
@@ -35,27 +34,6 @@ type BulkRow = {
 };
 
 type BulkResult = { email: string; success: boolean; error?: string };
-
-async function requireKey(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "unauthorized" }, { status: 401 }) } as const;
-
-  const ws = await getCurrentWorkspace(supabase);
-  if (!ws) return { error: NextResponse.json({ error: "Kein Workspace" }, { status: 400 }) } as const;
-
-  const apiKey = await getInstantlyApiKey(supabase, ws.workspace.id);
-  if (!apiKey) {
-    return {
-      error: NextResponse.json(
-        { error: "Kein Instantly-API-Key in den Einstellungen hinterlegt." },
-        { status: 400 }
-      ),
-    } as const;
-  }
-  return { apiKey } as const;
-}
 
 function validateRow(row: unknown, index: number): { row: BulkRow } | { error: string } {
   if (!row || typeof row !== "object") return { error: `Zeile ${index + 1}: ungueltig` };
@@ -141,8 +119,8 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const r = await requireKey(supabase);
-  if ("error" in r) return r.error;
+  const ctx = await requireInstantlyContext(supabase);
+  if ("error" in ctx) return ctx.error;
 
   const body = await req.json().catch(() => null);
   const rawRows = body?.accounts;
@@ -174,7 +152,7 @@ export async function POST(req: Request) {
     }
   });
 
-  const created = await mapLimit(validRows, CONCURRENCY, (row) => createOne(r.apiKey, row));
+  const created = await mapLimit(validRows, CONCURRENCY, (row) => createOne(ctx.apiKey, row));
   created.forEach((result, j) => {
     ordered[validIndexes[j]] = result;
   });

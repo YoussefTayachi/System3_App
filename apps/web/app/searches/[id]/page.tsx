@@ -6,7 +6,7 @@ import { getLangServer, formatDate } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
 import LeadsTable from "../../leads/leads-table";
 import SearchSettings from "./search-settings";
-import InstantlyCampaignBuilder from "./instantly-campaign-builder";
+import CampaignLinkCard from "./campaign-link-card";
 
 export default async function SearchDetailPage({
   params,
@@ -26,7 +26,7 @@ export default async function SearchDetailPage({
   // wird, statt Daten aus dem falschen Workspace anzuzeigen -- RLS wuerde den
   // Zugriff technisch erlauben (gehoert ja demselben Account), aber es waere hier
   // der falsche Kontext.
-  const [searchRes, contactsRes, suppressionRes, instantlyKeyRes] = await Promise.all([
+  const [searchRes, contactsRes, suppressionRes, instantlyKeyRes, localCampaignRes] = await Promise.all([
     supabase.from("searches").select("*").eq("id", id).eq("workspace_id", workspaceId).single(),
     supabase
       .from("contacts")
@@ -37,6 +37,14 @@ export default async function SearchDetailPage({
       .limit(1000),
     supabase.from("suppression_list").select("email,domain").eq("workspace_id", workspaceId),
     supabase.from("api_keys").select("provider").eq("workspace_id", workspaceId).eq("provider", "instantly").maybeSingle(),
+    supabase
+      .from("campaigns")
+      .select("id, status")
+      .eq("search_id", id)
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const search = searchRes.data;
 
@@ -67,10 +75,11 @@ export default async function SearchDetailPage({
           {search.query} · {search.location} · {formatDate(search.created_at, lang, { dateStyle: "long", timeStyle: "short" })}
         </p>
       </div>
-      <InstantlyCampaignBuilder
+      <CampaignLinkCard
         searchId={search.id}
         hasInstantlyKey={!!instantlyKeyRes.data}
-        existingCampaignId={search.instantly_campaign_id ?? null}
+        localCampaign={localCampaignRes.data}
+        manuallyLinkedCampaignId={localCampaignRes.data ? null : (search.instantly_campaign_id ?? null)}
         contactsWithEmailCount={contacts.filter((c) => !!c.email).length}
       />
       <LeadsTable
