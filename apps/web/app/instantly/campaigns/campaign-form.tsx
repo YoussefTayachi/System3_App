@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "../../language-provider";
 import { inputCls, primaryBtnCls } from "@/lib/ui";
 import { INSTANTLY_TIMEZONE_OPTIONS, defaultInstantlyTimezone } from "@/lib/instantly/campaigns";
@@ -90,6 +90,40 @@ export default function CampaignForm({
     onChange({ ...value, steps: value.steps.filter((_, idx) => idx !== i) });
   }
 
+  // Variablen per Klick einfuegen statt selbst tippen zu muessen: merkt sich,
+  // welches Feld (Betreff/Text welches Schritts) zuletzt fokussiert war, und
+  // fuegt dort an der Cursor-Position ein. Namen/Syntax ({{firstName}} etc.)
+  // muessen exakt Instantlys vordefinierten Lead-Variablen entsprechen (siehe
+  // https://help.instantly.ai/en/articles/6135930), sonst wird beim Versand
+  // nichts ersetzt.
+  const subjectRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const bodyRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+  const [activeField, setActiveField] = useState<{ step: number; field: "subject" | "body" } | null>(null);
+
+  const VARIABLES: { token: string; label: string }[] = [
+    { token: "{{firstName}}", label: F.variableFirstName },
+    { token: "{{lastName}}", label: F.variableLastName },
+    { token: "{{companyName}}", label: F.variableCompanyName },
+    { token: "{{email}}", label: F.variableEmail },
+    { token: "{{personalization}}", label: F.variablePersonalization },
+  ];
+
+  function insertVariable(stepIndex: number, token: string) {
+    const field = activeField && activeField.step === stepIndex ? activeField.field : "body";
+    const el = field === "subject" ? subjectRefs.current[stepIndex] : bodyRefs.current[stepIndex];
+    const current = value.steps[stepIndex][field];
+    const start = el?.selectionStart ?? current.length;
+    const end = el?.selectionEnd ?? current.length;
+    const next = current.slice(0, start) + token + current.slice(end);
+    updateStep(stepIndex, { [field]: next } as Partial<Step>);
+    // Cursor hinter das eingefuegte Token setzen, nachdem React den neuen Wert gerendert hat.
+    requestAnimationFrame(() => {
+      el?.focus();
+      const pos = start + token.length;
+      el?.setSelectionRange(pos, pos);
+    });
+  }
+
   return (
     <div className="space-y-4">
       <input
@@ -148,16 +182,37 @@ export default function CampaignForm({
                 )}
               </div>
             </div>
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-faint">{F.insertVariable}</span>
+              {VARIABLES.map((v) => (
+                <button
+                  key={v.token}
+                  type="button"
+                  onClick={() => insertVariable(i, v.token)}
+                  className="rounded-full border border-edge2 px-2 py-0.5 text-[11px] text-faint transition-colors hover:border-sky-500/50 hover:text-sky-600 dark:hover:text-sky-400"
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
             <input
+              ref={(el) => {
+                subjectRefs.current[i] = el;
+              }}
               placeholder={F.subjectPlaceholder}
               value={s.subject}
               onChange={(e) => updateStep(i, { subject: e.target.value })}
+              onFocus={() => setActiveField({ step: i, field: "subject" })}
               className={inputCls + " mb-2 w-full"}
             />
             <textarea
+              ref={(el) => {
+                bodyRefs.current[i] = el;
+              }}
               placeholder={F.bodyPlaceholder}
               value={s.body}
               onChange={(e) => updateStep(i, { body: e.target.value })}
+              onFocus={() => setActiveField({ step: i, field: "body" })}
               rows={4}
               className={inputCls + " w-full resize-y"}
             />

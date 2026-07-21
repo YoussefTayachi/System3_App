@@ -25,71 +25,113 @@ export type CampaignScheduleInput = {
  * freier Texteingabe im Formular, plus eine Normalisierung hier als
  * Sicherheitsnetz fuer evtl. noch gespeicherte alte Werte.
  */
+/**
+ * Instantly validiert campaign_schedule.timezone serverseitig gegen eine
+ * FESTE, ungewoehnlich kleine Enum-Liste (102 Werte, per api.instantly.ai/
+ * openapi/api_v2.json abgerufen und geprueft am 2026-07-21) -- keine freie
+ * IANA-Zeitzone. Die Liste enthaelt pro UTC-Offset+DST-Regelwerk jeweils nur
+ * EINEN Vertreter, nicht zwingend die bekannteste Stadt: Mitteleuropa (Berlin,
+ * Wien, Zuerich, Paris, Rom, Madrid, Amsterdam, Prag, Warschau, Budapest,
+ * Stockholm, Kopenhagen, Oslo -- alle identische MEZ/MESZ-Regeln) wird
+ * ausschliesslich durch "Europe/Belgrade" repraesentiert, GB/Irland/Portugal
+ * durch "Europe/Isle_of_Man", US-Ostkueste durch "America/Detroit". Weder
+ * "Europe/Berlin" noch "Europe/Vienna" noch "America/New_York" sind gueltige
+ * Werte, obwohl das intuitiv naheliegen wuerde -- deshalb bewusst ein
+ * Dropdown mit verstaendlichen Labels statt Freitext, und eine Alias-Map als
+ * Sicherheitsnetz fuer irgendwo frei eingetippte/importierte Werte.
+ */
 export const INSTANTLY_TIMEZONE_OPTIONS: { value: string; label: string }[] = [
-  { value: "UTC", label: "UTC" },
-  { value: "Europe/London", label: "London" },
-  { value: "Europe/Dublin", label: "Dublin" },
-  { value: "Europe/Lisbon", label: "Lissabon" },
-  { value: "Europe/Madrid", label: "Madrid" },
-  { value: "Europe/Paris", label: "Paris" },
-  { value: "Europe/Berlin", label: "Berlin / Wien" },
-  { value: "Europe/Amsterdam", label: "Amsterdam" },
-  { value: "Europe/Brussels", label: "Brüssel" },
-  { value: "Europe/Zurich", label: "Zürich" },
-  { value: "Europe/Rome", label: "Rom" },
-  { value: "Europe/Prague", label: "Prag" },
-  { value: "Europe/Warsaw", label: "Warschau" },
-  { value: "Europe/Budapest", label: "Budapest" },
-  { value: "Europe/Stockholm", label: "Stockholm" },
-  { value: "Europe/Copenhagen", label: "Kopenhagen" },
-  { value: "Europe/Oslo", label: "Oslo" },
-  { value: "Europe/Helsinki", label: "Helsinki" },
-  { value: "Europe/Athens", label: "Athen" },
-  { value: "Europe/Bucharest", label: "Bukarest" },
-  { value: "Europe/Istanbul", label: "Istanbul" },
-  { value: "Europe/Moscow", label: "Moskau" },
-  { value: "America/New_York", label: "New York (Ost, USA)" },
-  { value: "America/Chicago", label: "Chicago (Zentral, USA)" },
-  { value: "America/Denver", label: "Denver (Mountain, USA)" },
-  { value: "America/Los_Angeles", label: "Los Angeles (West, USA)" },
-  { value: "America/Toronto", label: "Toronto" },
-  { value: "America/Sao_Paulo", label: "São Paulo" },
-  { value: "America/Mexico_City", label: "Mexiko-Stadt" },
-  { value: "Asia/Dubai", label: "Dubai" },
-  { value: "Asia/Kolkata", label: "Neu-Delhi / Mumbai" },
-  { value: "Asia/Singapore", label: "Singapur" },
-  { value: "Asia/Hong_Kong", label: "Hongkong" },
-  { value: "Asia/Tokyo", label: "Tokio" },
-  { value: "Asia/Shanghai", label: "Shanghai" },
-  { value: "Australia/Sydney", label: "Sydney" },
-  { value: "Pacific/Auckland", label: "Auckland" },
+  { value: "Europe/Belgrade", label: "Mitteleuropa – Berlin, Wien, Zürich, Paris, Rom, Madrid (MEZ/MESZ)" },
+  { value: "Europe/Isle_of_Man", label: "Großbritannien, Irland, Portugal (GMT/BST)" },
+  { value: "Europe/Helsinki", label: "Osteuropa – Helsinki, Athen, Kiew, Riga (OEZ/OESZ)" },
+  { value: "Europe/Istanbul", label: "Istanbul / Türkei" },
+  { value: "Europe/Kaliningrad", label: "Kaliningrad" },
+  { value: "Africa/Casablanca", label: "Marokko" },
+  { value: "Africa/Cairo", label: "Kairo / Ägypten" },
+  { value: "Asia/Dubai", label: "Dubai / VAE" },
+  { value: "Asia/Tehran", label: "Teheran / Iran" },
+  { value: "Asia/Karachi", label: "Karatschi / Pakistan" },
+  { value: "Asia/Kolkata", label: "Indien (Neu-Delhi, Mumbai)" },
+  { value: "Asia/Dhaka", label: "Dhaka / Bangladesch" },
+  { value: "Asia/Hong_Kong", label: "Hongkong / China" },
+  { value: "Asia/Taipei", label: "Taiwan" },
+  { value: "Asia/Pyongyang", label: "Japan / Südkorea (UTC+9)" },
+  { value: "Australia/Perth", label: "Perth (Westaustralien)" },
+  { value: "Australia/Melbourne", label: "Sydney / Melbourne (Ostaustralien)" },
+  { value: "Pacific/Auckland", label: "Auckland / Neuseeland" },
+  { value: "America/Detroit", label: "US-Ostküste – New York, Miami, Boston (Eastern)" },
+  { value: "America/Chicago", label: "US Zentral – Chicago, Dallas (Central)" },
+  { value: "America/Boise", label: "US Mountain – Denver-nah (Mountain)" },
+  { value: "America/Creston", label: "US/Kanada Westküste-nah – ganzjährig UTC-7, keine Sommerzeit" },
+  { value: "America/Sao_Paulo", label: "São Paulo / Brasilien" },
+  { value: "America/Bogota", label: "Bogotá / Kolumbien" },
+  { value: "America/Santiago", label: "Santiago / Chile" },
 ];
 
-/** Bekannte Alias-Zonen (Backward-Links auf denselben Regelsatz), die Instantlys Enum nicht kennt -- auf die funktional identische, von Instantly akzeptierte Zone abbilden. */
+/**
+ * Frei eingetippte/importierte IANA-Namen (z.B. aus alten Datensaetzen oder
+ * versehentlich per Browser-Erkennung) auf den naechstliegenden, tatsaechlich
+ * von Instantly akzeptierten Wert aus der Liste oben abbilden. Nach
+ * UTC-Offset+DST-Regel gruppiert, nicht 1:1 nach Stadtname.
+ */
 const TIMEZONE_ALIASES: Record<string, string> = {
-  "Europe/Vienna": "Europe/Berlin",
-  "Europe/Vaduz": "Europe/Zurich",
-  "Europe/Busingen": "Europe/Zurich",
-  "Europe/San_Marino": "Europe/Rome",
-  "Europe/Vatican": "Europe/Rome",
-  "Europe/Bratislava": "Europe/Prague",
+  // Mitteleuropa (MEZ/MESZ) -> Europe/Belgrade
+  "Europe/Vienna": "Europe/Belgrade",
+  "Europe/Berlin": "Europe/Belgrade",
+  "Europe/Paris": "Europe/Belgrade",
+  "Europe/Rome": "Europe/Belgrade",
+  "Europe/Madrid": "Europe/Belgrade",
+  "Europe/Amsterdam": "Europe/Belgrade",
+  "Europe/Brussels": "Europe/Belgrade",
+  "Europe/Zurich": "Europe/Belgrade",
+  "Europe/Prague": "Europe/Belgrade",
+  "Europe/Warsaw": "Europe/Belgrade",
+  "Europe/Budapest": "Europe/Belgrade",
+  "Europe/Stockholm": "Europe/Belgrade",
+  "Europe/Copenhagen": "Europe/Belgrade",
+  "Europe/Oslo": "Europe/Belgrade",
+  "Europe/Vaduz": "Europe/Belgrade",
+  "Europe/Busingen": "Europe/Belgrade",
+  "Europe/San_Marino": "Europe/Belgrade",
+  "Europe/Vatican": "Europe/Belgrade",
+  "Europe/Bratislava": "Europe/Belgrade",
   "Europe/Ljubljana": "Europe/Belgrade",
   "Europe/Podgorica": "Europe/Belgrade",
-  "Europe/Sarajevo": "Europe/Belgrade",
   "Europe/Skopje": "Europe/Belgrade",
   "Europe/Zagreb": "Europe/Belgrade",
-  "Europe/Luxembourg": "Europe/Brussels",
+  "Europe/Luxembourg": "Europe/Belgrade",
+  // GB/Irland/Portugal (GMT/BST) -> Europe/Isle_of_Man
+  "Europe/London": "Europe/Isle_of_Man",
+  "Europe/Dublin": "Europe/Isle_of_Man",
+  "Europe/Lisbon": "Europe/Isle_of_Man",
+  // Osteuropa (OEZ/OESZ)
+  "Europe/Athens": "Europe/Helsinki",
+  "Europe/Bucharest": "Europe/Helsinki",
+  // US-Ostkueste
+  "America/New_York": "America/Detroit",
+  "America/Toronto": "America/Detroit",
+  // US Westkueste (kein exakter Treffer in Instantlys Liste verfuegbar)
+  "America/Los_Angeles": "America/Creston",
+  "America/Vancouver": "America/Creston",
+  "America/Denver": "America/Boise",
+  // Ostasien
+  "Asia/Tokyo": "Asia/Pyongyang",
+  "Asia/Seoul": "Asia/Pyongyang",
+  "Asia/Shanghai": "Asia/Hong_Kong",
+  "Asia/Singapore": "Asia/Hong_Kong",
+  "Europe/Moscow": "Europe/Kaliningrad",
 };
 
 export function normalizeInstantlyTimezone(tz: string): string {
-  return TIMEZONE_ALIASES[tz] ?? tz;
+  if (INSTANTLY_TIMEZONE_OPTIONS.some((o) => o.value === tz)) return tz;
+  return TIMEZONE_ALIASES[tz] ?? "Europe/Belgrade";
 }
 
-/** Browser-erkannte Zone (kann ein Alias sein, z.B. Europe/Vienna) auf eine der kuratierten, garantiert gueltigen Optionen abbilden -- mit Europe/Berlin als sicherem Fallback. */
+
+/** Browser-erkannte Zone (typischerweise ein bei Instantly ungueltiger Name wie Europe/Vienna) auf eine der kuratierten, garantiert gueltigen Optionen abbilden. */
 export function defaultInstantlyTimezone(): string {
-  const detected =
-    typeof Intl !== "undefined" ? normalizeInstantlyTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone) : "Europe/Berlin";
-  return INSTANTLY_TIMEZONE_OPTIONS.some((o) => o.value === detected) ? detected : "Europe/Berlin";
+  if (typeof Intl === "undefined") return "Europe/Belgrade";
+  return normalizeInstantlyTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
 }
 
 /** Instantlys campaign_schedule-Objekt: schedules[] mit name, timing.from/to, days (Objekt mit boolean-Keys "0".."6"), timezone. */
