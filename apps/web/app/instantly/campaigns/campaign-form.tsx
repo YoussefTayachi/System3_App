@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useT } from "../../language-provider";
 import { inputCls, primaryBtnCls } from "@/lib/ui";
+import { INSTANTLY_TIMEZONE_OPTIONS, defaultInstantlyTimezone } from "@/lib/instantly/campaigns";
 
 type Account = { email: string; status: number };
 export type Step = { subject: string; body: string; delayDays: number };
@@ -26,7 +27,7 @@ export function emptyCampaignFormValue(): CampaignFormValue {
     days: [1, 2, 3, 4, 5],
     from: "09:00",
     to: "17:00",
-    timezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "Europe/Vienna",
+    timezone: defaultInstantlyTimezone(),
     dailyLimit: "50",
   };
 }
@@ -190,12 +191,17 @@ export default function CampaignForm({
           <input type="time" value={value.from} onChange={(e) => onChange({ ...value, from: e.target.value })} className={inputCls} />
           <span className="text-xs text-faint">{F.until}</span>
           <input type="time" value={value.to} onChange={(e) => onChange({ ...value, to: e.target.value })} className={inputCls} />
-          <input
+          <select
             value={value.timezone}
             onChange={(e) => onChange({ ...value, timezone: e.target.value })}
-            className={inputCls + " w-40"}
-            placeholder="Europe/Vienna"
-          />
+            className={inputCls + " w-48"}
+          >
+            {INSTANTLY_TIMEZONE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           <input
             type="number"
             value={value.dailyLimit}

@@ -14,11 +14,89 @@ export type CampaignScheduleInput = {
   timezone: string; // z.B. "Europe/Vienna"
 };
 
+/**
+ * Instantly akzeptiert fuer campaign_schedule.timezone nur eine feste, per
+ * Enum validierte Liste an IANA-Zone-Strings (Fehler bei Verstoss: "must be
+ * equal to one of the allowed values"). Ein paar gaengige Namen fehlen darin,
+ * weil sie in der aktuellen IANA-tzdata nur noch als Backward-Link auf
+ * denselben Regelsatz gefuehrt werden -- z.B. Europe/Vienna, das seit 1980
+ * exakt dieselben Uhrzeiten/DST-Regeln wie Europe/Berlin hat und deshalb nur
+ * noch als veralteter Alias existiert. Deshalb: kuratierte Auswahl statt
+ * freier Texteingabe im Formular, plus eine Normalisierung hier als
+ * Sicherheitsnetz fuer evtl. noch gespeicherte alte Werte.
+ */
+export const INSTANTLY_TIMEZONE_OPTIONS: { value: string; label: string }[] = [
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "London" },
+  { value: "Europe/Dublin", label: "Dublin" },
+  { value: "Europe/Lisbon", label: "Lissabon" },
+  { value: "Europe/Madrid", label: "Madrid" },
+  { value: "Europe/Paris", label: "Paris" },
+  { value: "Europe/Berlin", label: "Berlin / Wien" },
+  { value: "Europe/Amsterdam", label: "Amsterdam" },
+  { value: "Europe/Brussels", label: "Brüssel" },
+  { value: "Europe/Zurich", label: "Zürich" },
+  { value: "Europe/Rome", label: "Rom" },
+  { value: "Europe/Prague", label: "Prag" },
+  { value: "Europe/Warsaw", label: "Warschau" },
+  { value: "Europe/Budapest", label: "Budapest" },
+  { value: "Europe/Stockholm", label: "Stockholm" },
+  { value: "Europe/Copenhagen", label: "Kopenhagen" },
+  { value: "Europe/Oslo", label: "Oslo" },
+  { value: "Europe/Helsinki", label: "Helsinki" },
+  { value: "Europe/Athens", label: "Athen" },
+  { value: "Europe/Bucharest", label: "Bukarest" },
+  { value: "Europe/Istanbul", label: "Istanbul" },
+  { value: "Europe/Moscow", label: "Moskau" },
+  { value: "America/New_York", label: "New York (Ost, USA)" },
+  { value: "America/Chicago", label: "Chicago (Zentral, USA)" },
+  { value: "America/Denver", label: "Denver (Mountain, USA)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (West, USA)" },
+  { value: "America/Toronto", label: "Toronto" },
+  { value: "America/Sao_Paulo", label: "São Paulo" },
+  { value: "America/Mexico_City", label: "Mexiko-Stadt" },
+  { value: "Asia/Dubai", label: "Dubai" },
+  { value: "Asia/Kolkata", label: "Neu-Delhi / Mumbai" },
+  { value: "Asia/Singapore", label: "Singapur" },
+  { value: "Asia/Hong_Kong", label: "Hongkong" },
+  { value: "Asia/Tokyo", label: "Tokio" },
+  { value: "Asia/Shanghai", label: "Shanghai" },
+  { value: "Australia/Sydney", label: "Sydney" },
+  { value: "Pacific/Auckland", label: "Auckland" },
+];
+
+/** Bekannte Alias-Zonen (Backward-Links auf denselben Regelsatz), die Instantlys Enum nicht kennt -- auf die funktional identische, von Instantly akzeptierte Zone abbilden. */
+const TIMEZONE_ALIASES: Record<string, string> = {
+  "Europe/Vienna": "Europe/Berlin",
+  "Europe/Vaduz": "Europe/Zurich",
+  "Europe/Busingen": "Europe/Zurich",
+  "Europe/San_Marino": "Europe/Rome",
+  "Europe/Vatican": "Europe/Rome",
+  "Europe/Bratislava": "Europe/Prague",
+  "Europe/Ljubljana": "Europe/Belgrade",
+  "Europe/Podgorica": "Europe/Belgrade",
+  "Europe/Sarajevo": "Europe/Belgrade",
+  "Europe/Skopje": "Europe/Belgrade",
+  "Europe/Zagreb": "Europe/Belgrade",
+  "Europe/Luxembourg": "Europe/Brussels",
+};
+
+export function normalizeInstantlyTimezone(tz: string): string {
+  return TIMEZONE_ALIASES[tz] ?? tz;
+}
+
+/** Browser-erkannte Zone (kann ein Alias sein, z.B. Europe/Vienna) auf eine der kuratierten, garantiert gueltigen Optionen abbilden -- mit Europe/Berlin als sicherem Fallback. */
+export function defaultInstantlyTimezone(): string {
+  const detected =
+    typeof Intl !== "undefined" ? normalizeInstantlyTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone) : "Europe/Berlin";
+  return INSTANTLY_TIMEZONE_OPTIONS.some((o) => o.value === detected) ? detected : "Europe/Berlin";
+}
+
 /** Instantlys campaign_schedule-Objekt: schedules[] mit name, timing.from/to, days (Objekt mit boolean-Keys "0".."6"), timezone. */
 export function buildCampaignSchedule({ days, from, to, timezone }: CampaignScheduleInput) {
   const daysObj: Record<string, boolean> = {};
   for (let d = 0; d <= 6; d++) daysObj[String(d)] = days.includes(d);
-  return { schedules: [{ name: "Standard", timing: { from, to }, days: daysObj, timezone }] };
+  return { schedules: [{ name: "Standard", timing: { from, to }, days: daysObj, timezone: normalizeInstantlyTimezone(timezone) }] };
 }
 
 // Laut Instantly-Doku wird beim Top-Level-Feld "sequences" nur das erste Element
