@@ -378,8 +378,15 @@ export default function LeadsTable({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Group | null>(null);
   const [drawerReplies, setDrawerReplies] = useState<
-    { id: string; contact_id: string; subject: string | null; body: string | null; ai_interest: string | null; sent_at: string | null }[]
+    {
+      id: string; contact_id: string; subject: string | null; body: string | null;
+      ai_interest: string | null; sent_at: string | null;
+      direction: string; instantly_email_id: string | null;
+    }[]
   >([]);
+  const [replyOpenId, setReplyOpenId] = useState<string | null>(null);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyBusyId, setReplyBusyId] = useState<string | null>(null);
   const [cols, setCols] = useState<Set<string>>(new Set(ALL_COLUMN_IDS));
   const [colsOpen, setColsOpen] = useState(false);
   const colsRef = useRef<HTMLDivElement>(null);
@@ -473,12 +480,38 @@ export default function LeadsTable({
     if (contactIds.length === 0) return;
     const { data } = await createClient()
       .from("messages")
-      .select("id, contact_id, subject, body, ai_interest, sent_at")
+      .select("id, contact_id, subject, body, ai_interest, sent_at, direction, instantly_email_id")
       .eq("workspace_id", workspaceId)
-      .eq("direction", "inbound")
       .in("contact_id", contactIds)
       .order("sent_at", { ascending: false });
     setDrawerReplies(data ?? []);
+  }
+
+  async function sendReply(original: { id: string; contact_id: string; subject: string | null }) {
+    const text = (replyDrafts[original.id] ?? "").trim();
+    if (!text || replyBusyId) return;
+    setReplyBusyId(original.id);
+    try {
+      const res = await fetch("/api/instantly/emails/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageId: original.id,
+          subject: (L.replySubjectPrefix + (original.subject || "")).trim(),
+          body: text,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || L.replyErrorGeneric);
+      if (data.id) setDrawerReplies((prev) => [data, ...prev]);
+      setReplyDrafts((prev) => ({ ...prev, [original.id]: "" }));
+      setReplyOpenId(null);
+      push(L.replySentToast, "success");
+    } catch (e) {
+      push((e as Error).message, "error");
+    } finally {
+      setReplyBusyId(null);
+    }
   }
 
   function toggle(key: string) {
@@ -993,7 +1026,19 @@ export default function LeadsTable({
                   {drawerReplies.map((r) => (
                     <div key={r.id} className="rounded-lg border border-edge/60 bg-surface/60 p-3">
                       <div className="mb-1 flex items-center justify-between gap-2">
-                        <p className="truncate text-xs font-medium text-ink">{r.subject || L.noSubject}</p>
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span
+                            className={
+                              "shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide " +
+                              (r.direction === "inbound"
+                                ? "bg-sky-500/10 text-sky-600 dark:text-sky-300"
+                                : "bg-edge2 text-faint")
+                            }
+                          >
+                            {r.direction === "inbound" ? L.directionInbound : L.directionOutbound}
+                          </span>
+                          <p className="truncate text-xs font-medium text-ink">{r.subject || L.noSubject}</p>
+                        </span>
                         {r.ai_interest && (
                           <span
                             className={
@@ -1009,7 +1054,45 @@ export default function LeadsTable({
                           </span>
                         )}
                       </div>
-                      <p className="line-clamp-3 text-xs leading-relaxed text-soft">{r.body}</p>
+                      <p className="whitespace-pre-wrap text-xs leading-relaxed text-soft">{r.body}</p>
+
+                      {r.direction === "inbound" && r.instantly_email_id && (
+                        <div className="mt-2">
+                          {replyOpenId === r.id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={replyDrafts[r.id] ?? ""}
+                                onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                                placeholder={L.replyPlaceholder}
+                                rows={3}
+                                className="w-full rounded-lg border border-edge2 bg-field px-3 py-2 text-xs text-ink placeholder-mute outline-none transition-colors focus:border-sky-500"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => sendReply(r)}
+                                  disabled={replyBusyId === r.id || !(replyDrafts[r.id] ?? "").trim()}
+                                  className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-sky-500 disabled:opacity-50"
+                                >
+                                  {replyBusyId === r.id ? L.replySending : L.replySend}
+                                </button>
+                                <button
+                                  onClick={() => setReplyOpenId(null)}
+                                  className="rounded-lg border border-edge2 px-3 py-1.5 text-xs font-medium text-faint transition-colors hover:text-ink"
+                                >
+                                  {L.replyCancel}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setReplyOpenId(r.id)}
+                              className="text-xs font-medium text-sky-600 transition-colors hover:text-sky-500 dark:text-sky-400"
+                            >
+                              {L.replyButton}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

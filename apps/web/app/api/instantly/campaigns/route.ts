@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireInstantlyContext, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
+import { getBillingStatus } from "@/lib/billing";
 import {
   buildCampaignSchedule,
   buildCampaignSequence,
@@ -32,6 +33,17 @@ export async function POST(req: Request) {
   const ctx = await requireInstantlyContext(supabase);
   if ("error" in ctx) return ctx.error;
   const workspaceId = ctx.workspace.id;
+
+  // Gleiche Sperre wie fuer neue Suchen (RLS auf public.searches, Migration
+  // 0024) -- hier zusaetzlich auf App-Ebene, weil das Anlegen einer Kampagne
+  // ueber diese API-Route laeuft und nicht per Direkt-Insert vom Client.
+  const billing = await getBillingStatus(supabase);
+  if (!billing?.isActive) {
+    return NextResponse.json(
+      { error: "Deine Testphase ist abgelaufen. Bitte waehle einen Plan unter /pricing, um neue Kampagnen anzulegen." },
+      { status: 402 }
+    );
+  }
 
   const body = (await req.json()) as CreateCampaignBody;
   const { searchId, name, mailboxes, steps, days, from, to, timezone, dailyLimit } = body;

@@ -6,6 +6,7 @@ import { IconLock, IconSend } from "../icons";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { useWorkspace } from "../workspace-provider";
+import BillingSection from "./billing-section";
 
 // Instantly (Mailboxen, Kampagnen, API-Key) lebt seit dem eigenen /instantly-
 // Bereich nicht mehr hier -- die anderen BYOK-Provider (reine Lookup-/
@@ -147,6 +148,8 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-ink">{t.settings.title}</h1>
         <p className="text-sm text-faint">{t.settings.subtitle}</p>
       </div>
+
+      <BillingSection />
 
       <div>
         <h2 className="mb-1 flex items-center gap-1.5 font-medium text-ink">

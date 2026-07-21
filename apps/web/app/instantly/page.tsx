@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace/server";
 import { getLangServer } from "@/lib/i18n/lang";
 import { dict } from "@/lib/i18n/dict";
-import { IconLock, IconMail, IconSend } from "../icons";
+import { IconLock, IconMail, IconSend, IconShield } from "../icons";
 import { cardCls } from "@/lib/ui";
 
 export default async function InstantlyOverviewPage() {
@@ -39,6 +39,7 @@ export default async function InstantlyOverviewPage() {
     { href: "/instantly/connection", icon: IconLock, title: O.cardConnectionTitle, body: O.cardConnectionBody },
     { href: "/instantly/mailboxes", icon: IconMail, title: O.cardMailboxesTitle, body: O.cardMailboxesBody },
     { href: "/instantly/campaigns", icon: IconSend, title: O.cardCampaignsTitle, body: O.cardCampaignsBody },
+    { href: "/instantly/deliverability", icon: IconShield, title: O.cardDeliverabilityTitle, body: O.cardDeliverabilityBody },
   ];
 
   return (
@@ -61,7 +62,7 @@ export default async function InstantlyOverviewPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(({ href, icon: Icon, title, body }) => (
           <Link
             key={href}

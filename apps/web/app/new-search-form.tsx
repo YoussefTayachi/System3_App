@@ -99,7 +99,14 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     const { error } = await createClient().from("searches").insert(row);
     setLoading(false);
     if (error) {
-      push(error.message, "error");
+      // RLS blockiert den Insert bei abgelaufener Testphase/fehlendem Abo
+      // (searches_owner_insert, Migration 0024) -- freundliche Meldung statt
+      // des rohen Postgres-Fehlertexts.
+      if (error.code === "42501") {
+        push(t.newSearchForm.billingBlocked, "error");
+      } else {
+        push(error.message, "error");
+      }
       return;
     }
     setQuery(""); setLocation(""); setKeywords(""); setCity(""); setListName("");
