@@ -55,7 +55,13 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
-        <p className="mt-5 text-center text-xs text-mute">{t.login.footer}</p>
+        <p className="mt-5 text-center text-xs text-mute">
+          {t.login.noAccount}{" "}
+          <a href="/signup" className="font-medium text-ink underline underline-offset-2">
+            {t.login.signupLink}
+          </a>
+        </p>
+        <p className="mt-2 text-center text-xs text-mute">{t.login.footer}</p>
       </div>
     </div>
   );
