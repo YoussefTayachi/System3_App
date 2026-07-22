@@ -1,8 +1,14 @@
 import Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { PLANS, STARTER_MONTHLY_LEAD_CAP, type PlanId } from "./plans";
 
 // Zentrale Stelle fuer alles Billing-Bezogene. Abo ist an den Account (auth.uid())
 // gebunden, nicht an einen einzelnen Workspace -- siehe Migration 0024.
+// Plan-Metadaten (Preis/Label/Features) leben in lib/plans.ts, damit
+// Client-Komponenten sie importieren koennen, ohne die Stripe-SDK mit
+// auszuliefern -- hier nur re-exportiert, damit bestehende Importe aus
+// lib/billing.ts weiterhin funktionieren.
+export { PLANS, STARTER_MONTHLY_LEAD_CAP, type PlanId };
 
 let stripeSingleton: Stripe | null = null;
 
@@ -14,37 +20,6 @@ export function getStripe(): Stripe {
   }
   return stripeSingleton;
 }
-
-export type PlanId = "starter" | "agency";
-
-export const PLANS: Record<
-  PlanId,
-  { priceEnvVar: string; label: string; priceLabel: string; features: string[] }
-> = {
-  starter: {
-    priceEnvVar: "STRIPE_PRICE_STARTER",
-    label: "Starter",
-    priceLabel: "49 € / Monat",
-    features: [
-      "1 Workspace",
-      "Unbegrenzte Leadsuchen (Google Maps + Corporate)",
-      "Native Instantly-Kampagnen (BYOK)",
-      "KI-Antwortklassifizierung",
-      "E-Mail-Support",
-    ],
-  },
-  agency: {
-    priceEnvVar: "STRIPE_PRICE_AGENCY",
-    label: "Agentur",
-    priceLabel: "139 € / Monat",
-    features: [
-      "Mehrere Workspaces (ein Kunde = ein Workspace)",
-      "Alles aus Starter",
-      "White-Label-Reports mit eigenem Branding",
-      "Priority Support",
-    ],
-  },
-};
 
 export function priceIdFor(plan: PlanId): string {
   const envVar = PLANS[plan].priceEnvVar;
@@ -104,5 +79,27 @@ export async function getBillingStatus(
     stripeCustomerId: data.stripe_customer_id,
     isActive,
     trialDaysLeft,
+  };
+}
+
+export type LeadUsage = { used: number; cap: number | null };
+
+// Fuer die Fortschrittsanzeige in den Einstellungen ("X / 5.000 Leads diesen
+// Monat"). cap = null bedeutet unlimitiert (Agentur-Plan).
+export async function getLeadUsage(supabase: SupabaseClient): Promise<LeadUsage | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const [{ data: sub }, { data: used }] = await Promise.all([
+    supabase.from("subscriptions").select("plan").eq("owner_id", user.id).single(),
+    supabase.rpc("my_qualified_lead_count"),
+  ]);
+
+  const isAgency = sub?.plan === "agency";
+  return {
+    used: (used as number | null) ?? 0,
+    cap: isAgency ? null : STARTER_MONTHLY_LEAD_CAP,
   };
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireInstantlyContext, instantlyRequest, InstantlyApiError } from "@/lib/instantly";
 import { getBillingStatus } from "@/lib/billing";
+import { filterSuppressed } from "@/lib/suppression";
 import {
   buildCampaignSchedule,
   buildCampaignSequence,
@@ -69,25 +70,43 @@ export async function POST(req: Request) {
     );
   }
 
-  const { data: contacts } = await supabase
-    .from("contacts")
-    .select("id, email, first_name, last_name, businesses!inner(name, personalization, search_id)")
-    .eq("workspace_id", workspaceId)
-    .eq("businesses.search_id", searchId)
-    .not("email", "is", null)
-    .limit(5000);
+  const [{ data: contacts }, { data: suppression }] = await Promise.all([
+    supabase
+      .from("contacts")
+      .select(
+        "id, email, first_name, last_name, outreach_status, businesses!inner(name, website, personalization, search_id)"
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("businesses.search_id", searchId)
+      .not("email", "is", null)
+      .limit(5000),
+    supabase.from("suppression_list").select("email, domain").eq("workspace_id", workspaceId),
+  ]);
 
   type ContactRow = {
     id: string;
     email: string | null;
     first_name: string | null;
     last_name: string | null;
-    businesses: { name: string | null; personalization: string | null } | null;
+    outreach_status: string;
+    businesses: { name: string | null; website: string | null; personalization: string | null } | null;
   };
 
-  const rows = ((contacts ?? []) as unknown as ContactRow[]).filter((c) => !!c.email);
+  // Sicherheitsnetz gegen versehentliches erneutes Anschreiben: Blockliste
+  // (suppression_list) UND Kontakte, die per KI-Klassifizierung schon explizit
+  // "kein Interesse" geantwortet haben, werden nie in eine neue Kampagne
+  // aufgenommen -- unabhaengig davon, aus welcher Suche/wann sie urspruenglich
+  // gefunden wurden. Vorher wurden hier ausnahmslos alle Kontakte mit E-Mail
+  // uebernommen, auch bereits blockierte/abgelehnte.
+  const withEmail = ((contacts ?? []) as unknown as ContactRow[]).filter((c) => !!c.email);
+  const notDeclined = withEmail.filter((c) => c.outreach_status !== "not_interested");
+  const rows = filterSuppressed(notDeclined, suppression ?? []);
+
   if (rows.length === 0) {
-    return NextResponse.json({ error: "Keine Kontakte mit E-Mail-Adresse in dieser Suche gefunden." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Keine kontaktierbaren Leads in dieser Suche gefunden (alle bereits blockiert oder ohne Interesse)." },
+      { status: 400 }
+    );
   }
   const leads = rows.map((c) => ({
     email: c.email as string,

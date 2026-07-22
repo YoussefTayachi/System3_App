@@ -10,6 +10,7 @@ from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
+from worker.email_classify import classify_email
 from worker.keys import get_api_key
 from worker.suppression import is_suppressed, load_suppression
 
@@ -79,10 +80,19 @@ def _clean(value: str | None) -> str | None:
 
 
 def parse_persons(data: dict) -> list[dict]:
+    """Die KI ist schon per Prompt auf echte Personen eingeschraenkt (siehe
+    SYSTEM_PROMPT), trotzdem als zweite Absicherung dieselbe Praefix-Heuristik
+    wie bei Hunter: falls die gefundene E-Mail doch eine Rollen-Adresse ist
+    (info@/office@ etc.), wird der Kontakt verworfen statt als personenbezogen
+    gezaehlt zu werden."""
     out = []
     for p in data.get("persons", []):
         name = _clean(p.get("name"))
         if name is None or is_company_name(name):
+            continue
+        email = _clean(p.get("email"))
+        email_type = classify_email(email)
+        if email_type == "generic":
             continue
         parts = name.split(" ", 1)
         out.append(
@@ -91,7 +101,8 @@ def parse_persons(data: dict) -> list[dict]:
                 "first_name": parts[0],
                 "last_name": parts[1] if len(parts) > 1 else None,
                 "title": _clean(p.get("title")),
-                "email": _clean(p.get("email")),
+                "email": email,
+                "email_type": email_type,
                 "phone": _clean(p.get("phone")),
                 "linkedin": _clean(p.get("linkedin")),
                 "instagram": _clean(p.get("instagram")),

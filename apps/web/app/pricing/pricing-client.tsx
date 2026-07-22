@@ -4,32 +4,13 @@ import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { primaryBtnCls, cardCls } from "@/lib/ui";
 import type { BillingStatus } from "@/lib/billing";
-import type { PlanId } from "@/lib/billing";
+import { PLANS, type PlanId } from "@/lib/plans";
 
-const PLAN_CARDS: { id: PlanId; features: string[] }[] = [
-  {
-    id: "starter",
-    features: [
-      "1 Workspace",
-      "Unbegrenzte Leadsuchen (Google Maps + Corporate)",
-      "Native Instantly-Kampagnen (BYOK)",
-      "KI-Antwortklassifizierung",
-      "E-Mail-Support",
-    ],
-  },
-  {
-    id: "agency",
-    features: [
-      "Mehrere Workspaces (ein Kunde = ein Workspace)",
-      "Alles aus Starter",
-      "White-Label-Reports mit eigenem Branding",
-      "Priority Support",
-    ],
-  },
-];
-
-const PLAN_PRICE: Record<PlanId, string> = { starter: "49 €", agency: "139 €" };
-const PLAN_LABEL: Record<PlanId, string> = { starter: "Starter", agency: "Agentur" };
+// PLANS (Preis, Label, Feature-Liste) lebt zentral in lib/billing.ts -- vorher
+// gab es hier eine zweite, unabhaengige Kopie derselben Daten (Preis-Aenderung
+// haette man an zwei Stellen synchron halten muessen). Einzige Quelle der
+// Wahrheit jetzt: lib/billing.ts.
+const PLAN_ORDER: PlanId[] = ["starter", "agency"];
 
 export default function PricingClient({ status }: { status: BillingStatus | null }) {
   const { t } = useT();
@@ -64,25 +45,26 @@ export default function PricingClient({ status }: { status: BillingStatus | null
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        {PLAN_CARDS.map((plan) => {
-          const current = isCurrentPlan(plan.id);
+        {PLAN_ORDER.map((id) => {
+          const plan = PLANS[id];
+          const current = isCurrentPlan(id);
           return (
             <div
-              key={plan.id}
+              key={id}
               className={
                 cardCls +
                 " relative flex flex-col " +
-                (plan.id === "agency" ? "border-sky-500/50" : "")
+                (id === "agency" ? "border-sky-500/50" : "")
               }
             >
-              {plan.id === "agency" && (
+              {id === "agency" && (
                 <span className="absolute -top-3 right-6 rounded-full bg-sky-500 px-2.5 py-0.5 text-xs font-medium text-white shadow">
                   {P.popularBadge}
                 </span>
               )}
-              <h2 className="font-medium text-ink">{PLAN_LABEL[plan.id]}</h2>
+              <h2 className="font-medium text-ink">{plan.label}</h2>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-3xl font-semibold text-ink">{PLAN_PRICE[plan.id]}</span>
+                <span className="text-3xl font-semibold text-ink">{plan.monthlyPriceEur} €</span>
                 <span className="text-sm text-faint">{P.billedMonthly}</span>
               </p>
               <ul className="mt-4 flex-1 space-y-2 text-sm text-soft">
@@ -99,11 +81,11 @@ export default function PricingClient({ status }: { status: BillingStatus | null
                 </span>
               ) : (
                 <button
-                  onClick={() => startCheckout(plan.id)}
+                  onClick={() => startCheckout(id)}
                   disabled={loadingPlan !== null}
                   className={primaryBtnCls + " mt-6"}
                 >
-                  {loadingPlan === plan.id ? P.redirecting : P.cta}
+                  {loadingPlan === id ? P.redirecting : P.cta}
                 </button>
               )}
             </div>

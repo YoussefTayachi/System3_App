@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useT } from "../language-provider";
 import { useToast } from "../toast-provider";
 import { cardCls, primaryBtnCls, secondaryBtnCls } from "@/lib/ui";
-import type { BillingStatus } from "@/lib/billing";
+import type { BillingStatus, LeadUsage } from "@/lib/billing";
 
 const PLAN_LABEL_KEY: Record<string, "planTrial" | "planStarter" | "planAgency"> = {
   trial: "planTrial",
@@ -31,6 +31,7 @@ export default function BillingSection() {
   const { push } = useToast();
   const B = t.billing;
   const [status, setStatus] = useState<BillingStatus | null | undefined>(undefined);
+  const [usage, setUsage] = useState<LeadUsage | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,10 @@ export default function BillingSection() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setStatus)
       .catch(() => setStatus(null));
+    fetch("/api/billing/lead-usage")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setUsage)
+      .catch(() => setUsage(null));
   }, []);
 
   async function openPortal() {
@@ -92,6 +97,33 @@ export default function BillingSection() {
           </button>
         )}
       </div>
+
+      {usage && (
+        <div className="mt-3 rounded-lg border border-edge/60 bg-surface/60 px-4 py-3.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-ink">{B.leadUsageHeading}</span>
+            <span className="text-faint">
+              {usage.cap === null ? B.leadUsageUnlimited : B.leadUsageLabel(usage.used, usage.cap)}
+            </span>
+          </div>
+          {usage.cap !== null && (
+            <>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-chip">
+                <div
+                  className={
+                    "h-full rounded-full transition-all " +
+                    (usage.used >= usage.cap ? "bg-red-500" : usage.used / usage.cap > 0.8 ? "bg-amber-500" : "bg-sky-500")
+                  }
+                  style={{ width: `${Math.min(100, (usage.used / usage.cap) * 100)}%` }}
+                />
+              </div>
+              {usage.used >= usage.cap && (
+                <p className="mt-2 text-xs text-red-500">{B.leadUsageCapReached}</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

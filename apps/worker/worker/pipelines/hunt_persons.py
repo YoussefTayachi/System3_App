@@ -9,6 +9,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from worker.db import sb
+from worker.email_classify import classify_email
 from worker.keys import get_api_key
 from worker.suppression import is_suppressed, load_suppression
 
@@ -21,9 +22,16 @@ def extract_domain(url: str) -> str:
 
 
 def parse_hunter_emails(payload: dict) -> list[dict]:
+    """Nimmt nur personenbezogene Treffer mit (Hunters eigenes type-Feld) --
+    generische Rollen-Adressen (info@/office@ etc.) werden verworfen, siehe
+    worker.email_classify. Cold-Outreach an ein geteiltes Postfach bringt dem
+    Kunden praktisch nichts und zaehlt auch nicht als qualifizierter Lead."""
     out = []
     for e in payload.get("data", {}).get("emails", []):
         if (e.get("verification") or {}).get("status") == "invalid":
+            continue
+        email_type = classify_email(e.get("value"), hunter_type=e.get("type"))
+        if email_type == "generic":
             continue
         out.append(
             {
@@ -35,6 +43,7 @@ def parse_hunter_emails(payload: dict) -> list[dict]:
                 "seniority": e.get("seniority"),
                 "department": e.get("department"),
                 "email": e.get("value"),
+                "email_type": email_type,
                 "email_confidence": e.get("confidence"),
                 "email_verification_status": (e.get("verification") or {}).get("status"),
                 "phone": e.get("phone_number"),

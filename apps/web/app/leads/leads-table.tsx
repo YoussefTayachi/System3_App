@@ -21,6 +21,7 @@ type Contact = {
   linkedin: string | null;
   source: string;
   outreach_status: string;
+  email_type: string | null;
   businesses: {
     name: string;
     website: string | null;
@@ -46,6 +47,7 @@ type Merged = {
   phone: string | null;
   linkedin: string | null;
   outreach_status: string;
+  email_type: string | null;
   sources: string[];
 };
 
@@ -133,6 +135,7 @@ function mergeInto(target: Merged, c: Contact) {
     target.email = c.email;
     target.email_confidence = c.email_confidence;
     target.email_verification_status = c.email_verification_status;
+    target.email_type = c.email_type;
   }
   if (!target.phone && c.phone) target.phone = c.phone;
   if (!target.first_name && c.first_name) target.first_name = c.first_name;
@@ -185,6 +188,7 @@ function groupContacts(contacts: Contact[]): Group[] {
         email: c.email,
         email_confidence: c.email_confidence,
         email_verification_status: c.email_verification_status,
+        email_type: c.email_type,
         phone: c.phone,
         linkedin: c.linkedin,
         outreach_status: c.outreach_status || "new",
@@ -287,6 +291,24 @@ function StatusSelect({
   );
 }
 
+function EmailTypeBadge({ c, t }: { c: Merged; t: LeadsDict }) {
+  if (!c.email || !c.email_type) return null;
+  const personal = c.email_type === "personal";
+  return (
+    <span
+      title={personal ? t.emailTypePersonalHint : t.emailTypeGenericHint}
+      className={
+        "shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide " +
+        (personal
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+          : "bg-amber-500/10 text-amber-700 dark:text-amber-300")
+      }
+    >
+      {personal ? t.emailTypePersonal : t.emailTypeGeneric}
+    </span>
+  );
+}
+
 function VerificationShield({ c, t }: { c: Merged; t: LeadsDict }) {
   if (!c.email) return null;
   const verified =
@@ -373,6 +395,7 @@ export default function LeadsTable({
   const [onlyEmail, setOnlyEmail] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [emailTypeFilter, setEmailTypeFilter] = useState("");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -441,6 +464,7 @@ export default function LeadsTable({
         const cs = g.contacts.filter((c) => {
           if (onlyEmail && !c.email) return false;
           if (statusFilter && c.outreach_status !== statusFilter) return false;
+          if (emailTypeFilter && c.email_type !== emailTypeFilter) return false;
           if (!needle || companyMatch) return true;
           return [c.full_name, c.title, c.email]
             .filter(Boolean)
@@ -449,7 +473,7 @@ export default function LeadsTable({
         return { ...g, contacts: cs };
       })
       .filter((g) => g.contacts.length > 0);
-  }, [allGroups, q, onlyEmail, searchFilter, statusFilter]);
+  }, [allGroups, q, onlyEmail, searchFilter, statusFilter, emailTypeFilter]);
 
   async function updateStatus(contactId: string, status: string) {
     setStatusOverrides((prev) => ({ ...prev, [contactId]: status }));
@@ -623,6 +647,12 @@ export default function LeadsTable({
   if (statusFilter) {
     activeChips.push({ label: L.statusLabels[statusFilter], clear: () => setStatusFilter("") });
   }
+  if (emailTypeFilter) {
+    activeChips.push({
+      label: emailTypeFilter === "personal" ? L.emailTypePersonal : L.emailTypeGeneric,
+      clear: () => setEmailTypeFilter(""),
+    });
+  }
   if (q) activeChips.push({ label: '"' + q + '"', clear: () => setQ("") });
 
   return (
@@ -659,6 +689,15 @@ export default function LeadsTable({
             {STATUS_ORDER.map((s) => (
               <option key={s} value={s}>{L.statusLabels[s]}</option>
             ))}
+          </select>
+          <select
+            value={emailTypeFilter}
+            onChange={(e) => setEmailTypeFilter(e.target.value)}
+            className="rounded-lg border border-edge2 bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-sky-500"
+          >
+            <option value="">{L.allEmailTypes}</option>
+            <option value="personal">{L.emailTypePersonal}</option>
+            <option value="generic">{L.emailTypeGeneric}</option>
           </select>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-soft" title={L.selectAllTitle}>
             <input
@@ -847,6 +886,7 @@ export default function LeadsTable({
                                   <span className="flex items-center gap-1.5 text-ink">
                                     <VerificationShield c={c} t={L} />
                                     {c.email}
+                                    <EmailTypeBadge c={c} t={L} />
                                   </span>
                                 ) : (
                                   <span className="text-mute">—</span>
@@ -1125,6 +1165,7 @@ export default function LeadsTable({
                     {c.email && (
                       <p className="flex items-center gap-1.5">
                         <VerificationShield c={c} t={L} /> {c.email}
+                        <EmailTypeBadge c={c} t={L} />
                       </p>
                     )}
                     {c.phone && <p>{c.phone}</p>}
