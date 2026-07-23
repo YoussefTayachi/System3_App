@@ -260,7 +260,7 @@ const STATUS_SELECT_CLS: Record<string, string> = {
   new: "border-edge2 bg-chip text-soft",
   contacted: "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300",
   replied: "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300",
-  meeting_booked: "border-coral/30 bg-coral-soft text-coral dark:border-coral/40 dark:bg-coral/10",
+  meeting_booked: "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300",
   customer: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
   not_interested: "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
 };

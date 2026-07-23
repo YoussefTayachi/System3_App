@@ -1,7 +1,5 @@
 import "./globals.css";
 import "@fontsource-variable/inter";
-import "@fontsource-variable/fraunces";
-import "@fontsource-variable/fraunces/wght-italic.css";
 import { createClient } from "@/lib/supabase/server";
 import { getLangServer } from "@/lib/i18n/lang";
 import { getCurrentWorkspace } from "@/lib/workspace/server";
@@ -78,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="flex min-h-screen">
               <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-edge/60 bg-panel2 px-4 py-5 md:flex">
                 <div className="mb-4 flex items-center gap-2 px-2">
-                  <span className="relative text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker<span className="absolute right-[-7px] top-0.5 h-1.5 w-1.5 rounded-full bg-coral" /></span>
+                  <span className="text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
                 </div>
                 <WorkspaceSwitcher className="mb-3" />
                 <CommandPaletteTrigger />
@@ -100,7 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </aside>
               <div className="min-w-0 flex-1 md:pl-64">
                 <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-edge/60 bg-surface/80 px-6 backdrop-blur md:hidden">
-                  <span className="relative shrink-0 text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker<span className="absolute right-[-7px] top-0.5 h-1.5 w-1.5 rounded-full bg-coral" /></span>
+                  <span className="shrink-0 text-3xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
                   <div className="min-w-0 flex-1">
                     <WorkspaceSwitcher />
                   </div>

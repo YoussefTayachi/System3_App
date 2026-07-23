@@ -30,7 +30,7 @@ export default function LoginPage() {
     <div className="dot-grid flex min-h-screen items-center justify-center px-4">
       <div className="fade-up w-full max-w-sm">
         <div className="mb-7">
-          <span className="relative text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker<span className="absolute right-[-10px] top-1 h-2 w-2 rounded-full bg-coral" /></span>
+          <span className="text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
           <p className="mt-1 text-xs text-faint">{t.login.tagline}</p>
         </div>
 

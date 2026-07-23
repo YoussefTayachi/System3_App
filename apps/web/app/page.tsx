@@ -139,7 +139,7 @@ export default async function Dashboard() {
               <svg viewBox="0 0 36 36" className="h-11 w-11 -rotate-90">
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--c-chip)" strokeWidth="3.5" />
                 <circle
-                  cx="18" cy="18" r="15.5" fill="none" stroke="var(--c-coral)" strokeWidth="3.5" strokeLinecap="round"
+                  cx="18" cy="18" r="15.5" fill="none" stroke="#0ea5e9" strokeWidth="3.5" strokeLinecap="round"
                   strokeDasharray={`${(onboardingDoneCount / onboardingSteps.length) * 97.4} 97.4`}
                 />
               </svg>
@@ -188,7 +188,7 @@ export default async function Dashboard() {
         {kpis.map((k) => (
           <div key={k.label} className="px-4 py-3.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-mute">{k.label}</p>
-            <p className={"mt-0.5 tracking-tight " + (k.hero ? "font-display text-[28px] font-semibold text-coral" : "text-2xl font-semibold text-ink")}>
+            <p className={"mt-0.5 text-2xl font-semibold tracking-tight " + (k.hero ? "text-sky-600 dark:text-sky-400" : "text-ink")}>
               {typeof k.value === "number" ? <CountUp value={k.value} /> : k.value}
             </p>
             {k.sub && <p className="text-[11px] text-mute">{k.sub}</p>}
@@ -198,14 +198,12 @@ export default async function Dashboard() {
 
       {/* ROI-Banner */}
       {(stats.contacts_total ?? 0) > 0 && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-coral/20 bg-gradient-to-r from-coral-soft via-panel to-panel px-4 py-3.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-coral/12">
-            <svg className="h-4 w-4 text-coral" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-            </svg>
-          </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-sky-200/70 bg-gradient-to-r from-sky-50 via-panel to-panel px-4 py-3 dark:border-sky-500/25 dark:from-sky-500/10">
+          <svg className="h-4 w-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+          </svg>
           <p className="text-sm text-ink">
-            <span className="font-display text-lg font-semibold text-coral">≈ {roi.hours} {t.dashboard.roiHours}</span> {t.dashboard.roiSaved}
+            <span className="font-semibold">≈ {roi.hours} {t.dashboard.roiHours}</span> {t.dashboard.roiSaved}
           </p>
           <p className="text-sm text-soft">
             · {t.dashboard.roiEquals} <span className="font-medium text-emerald-600 dark:text-emerald-400">~{roi.value} €</span> {t.dashboard.roiLaborCost}
