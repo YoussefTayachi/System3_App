@@ -17,6 +17,8 @@
   --c-soft: #57534e;
   --c-faint: #79766f;
   --c-mute: #aaa79f;
+  --c-coral: #ea5a3e;
+  --c-coral-soft: #fdece7;
   color-scheme: light;
 }
 
@@ -34,6 +36,8 @@
   --c-soft: #a3a29e;
   --c-faint: #757570;
   --c-mute: #525250;
+  --c-coral: #f0745c;
+  --c-coral-soft: rgba(240, 116, 92, 0.12);
   color-scheme: dark;
 }
 
@@ -51,6 +55,14 @@
   --color-soft: var(--c-soft);
   --color-faint: var(--c-faint);
   --color-mute: var(--c-mute);
+  --color-coral: var(--c-coral);
+  --color-coral-soft: var(--c-coral-soft);
+}
+
+.font-display {
+  font-family: "Fraunces Variable", ui-serif, Georgia, serif;
+  font-style: italic;
+  font-feature-settings: "ss01";
 }
 
 body {

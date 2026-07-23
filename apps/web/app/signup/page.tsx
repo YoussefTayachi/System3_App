@@ -55,7 +55,7 @@ export default function SignupPage() {
     return (
       <div className="dot-grid flex min-h-screen items-center justify-center px-4">
         <div className="fade-up w-full max-w-sm text-center">
-          <span className="text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
+          <span className="relative text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker<span className="absolute right-[-10px] top-1 h-2 w-2 rounded-full bg-coral" /></span>
           <div className="mt-7 rounded-lg border border-edge/60 bg-panel p-6 shadow-sm">
             <h2 className="text-sm font-medium text-ink">{t.signup.confirmHeading}</h2>
             <p className="mt-2 text-sm leading-relaxed text-faint">{t.signup.confirmBody(email)}</p>
@@ -69,7 +69,7 @@ export default function SignupPage() {
     <div className="dot-grid flex min-h-screen items-center justify-center px-4">
       <div className="fade-up w-full max-w-sm">
         <div className="mb-7">
-          <span className="text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker</span>
+          <span className="relative text-5xl font-extrabold tracking-tighter text-[#0EA5E9]">frostbreaker<span className="absolute right-[-10px] top-1 h-2 w-2 rounded-full bg-coral" /></span>
           <p className="mt-1 text-xs text-faint">{t.signup.tagline}</p>
         </div>
 
