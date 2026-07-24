@@ -45,7 +45,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
   const router = useRouter();
   const { t } = useT();
   const { push } = useToast();
-  const [mode, setMode] = useState<"maps" | "corporate" | "instantly">("maps");
+  const [mode, setMode] = useState<"maps" | "corporate">("maps");
   const [listName, setListName] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [query, setQuery] = useState("");
@@ -57,7 +57,6 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
   const [country, setCountry] = useState("AT");
   const [headcount, setHeadcount] = useState("");
   const [keywords, setKeywords] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
   const [painPointNoWebsite, setPainPointNoWebsite] = useState(false);
   const [painPointMaxRating, setPainPointMaxRating] = useState<number | "">("");
   const [selectedPlaybook, setSelectedPlaybook] = useState("");
@@ -81,14 +80,6 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
     if (painPointNoWebsite) painPointFilters.pain_point_no_website = true;
     if (painPointMaxRating !== "") painPointFilters.pain_point_max_rating = painPointMaxRating;
 
-    const databaseFilters = {
-      industry: industry || null,
-      city: city || null,
-      country,
-      headcount: headcount || null,
-      keywords: keywords || null,
-      ...(mode === "instantly" ? { job_title: jobTitle || null } : {}),
-    };
     const row: Record<string, unknown> =
       mode === "maps"
         ? {
@@ -99,12 +90,11 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
           }
         : {
             ...base,
-            workspace_id: workspaceId, source: mode,
-            query: [jobTitle, industry, keywords].filter(Boolean).join(" · ") ||
-              (mode === "instantly" ? "Instantly-Suche" : "Corporate-Suche"),
+            workspace_id: workspaceId, source: "corporate",
+            query: [industry, keywords].filter(Boolean).join(" · ") || "Corporate-Suche",
             location: [city, country].filter(Boolean).join(", "),
             max_results: maxResults,
-            filters: databaseFilters,
+            filters: { industry: industry || null, city: city || null, country, headcount: headcount || null, keywords: keywords || null },
           };
     const { error } = await createClient().from("searches").insert(row);
     setLoading(false);
@@ -119,7 +109,7 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       }
       return;
     }
-    setQuery(""); setLocation(""); setKeywords(""); setCity(""); setJobTitle(""); setListName("");
+    setQuery(""); setLocation(""); setKeywords(""); setCity(""); setListName("");
     router.refresh();
   }
 
@@ -159,9 +149,6 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
         </button>
         <button type="button" className={tabCls(mode === "corporate")} onClick={() => setMode("corporate")}>
           {t.newSearchForm.tabCorporate}
-        </button>
-        <button type="button" className={tabCls(mode === "instantly")} onClick={() => setMode("instantly")}>
-          {t.newSearchForm.tabInstantly}
         </button>
       </div>
 
@@ -242,15 +229,8 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
 
       {mode === "maps" && <SubmitButton loading={loading} />}
 
-      {mode === "corporate" || mode === "instantly" ? (
+      {mode === "corporate" ? (
         <div className="flex flex-wrap items-end gap-3">
-          {mode === "instantly" && (
-            <label className={labelCls + " min-w-44 flex-1"}>
-              {t.newSearchForm.jobTitle}
-              <input placeholder={t.newSearchForm.jobTitlePlaceholder} value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)} className={inputCls} />
-            </label>
-          )}
           <label className={labelCls + " min-w-44 flex-1"}>
             {t.newSearchForm.industry}
             <select value={industry} onChange={(e) => setIndustry(e.target.value)} className={inputCls}>
@@ -293,9 +273,6 @@ export default function NewSearchForm({ workspaceId }: { workspaceId: string }) 
       ) : null}
       {mode === "corporate" && (
         <p className="text-xs text-mute">{t.newSearchForm.corporateHint}</p>
-      )}
-      {mode === "instantly" && (
-        <p className="text-xs text-mute">{t.newSearchForm.instantlyHint}</p>
       )}
     </form>
   );

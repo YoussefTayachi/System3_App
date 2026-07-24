@@ -11,7 +11,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from worker.db import sb
 from worker.keys import get_api_key
 from worker.pipelines.discover import discover_companies, parse_discover_company
-from worker.pipelines.instantly_search import discover_instantly_leads, parse_instantly_company
 from worker.suppression import domain_of, load_suppression
 from worker.queue import enqueue
 
@@ -95,33 +94,6 @@ def run_corporate(search: dict, ws: str) -> None:
         sb().table("businesses").insert(rows).execute()
 
 
-def run_instantly(search: dict, ws: str) -> None:
-    """Instantly-Modus: SuperSearch statt Google Maps/Hunter Discover, siehe
-    instantly_search.py fuer Details (Suche selbst kostet keine Instantly-Credits)."""
-    api_key = get_api_key(ws, "instantly")
-    leads = discover_instantly_leads(search.get("filters") or {}, api_key, search["max_results"])
-    existing = {
-        b["website"]
-        for b in sb().table("businesses").select("website").eq("workspace_id", ws).execute().data
-        if b.get("website")
-    }
-    _, blocked_domains = load_suppression(ws)
-    rows = []
-    for lead in leads:
-        row = parse_instantly_company(lead)
-        if not row["website"] or row["website"] in existing:
-            continue
-        d = domain_of(row["website"])
-        if d and d in blocked_domains:
-            continue
-        rows.append(row | {"workspace_id": ws, "search_id": search["id"]})
-        existing.add(row["website"])
-        if len(rows) >= search["max_results"]:
-            break
-    if rows:
-        sb().table("businesses").insert(rows).execute()
-
-
 def run(job: dict) -> None:
     ws = job["workspace_id"]
     search_id = job["payload"]["search_id"]
@@ -133,10 +105,6 @@ def run(job: dict) -> None:
     try:
         if source == "corporate":
             run_corporate(search, ws)
-            _finish(search_id, ws, auto_enrich, source)
-            return
-        if source == "instantly":
-            run_instantly(search, ws)
             _finish(search_id, ws, auto_enrich, source)
             return
         api_key = get_api_key(ws, "google_maps")
@@ -197,12 +165,12 @@ def _finish(search_id: str, ws: str, auto_enrich: bool, source: str) -> None:
     if not auto_enrich:
         return
     # Hunter-Domain-Search (hunt_persons) kostet pro Firma Credits. Bei "corporate"
-    # (Hunter Discover) und "instantly" (Instantly SuperSearch) kam die Firma bereits
-    # aus einer kostenlosen Datenbank-Suche, und find_decisionmaker (OpenAI) findet
-    # die Email dort ohnehin kostenlos -- ein zusaetzlicher bezahlter Hunter-Abgleich
-    # waere doppelte Kosten fuer denselben Zweck. Nur im Maps-Modus, wo es keine
-    # alternative kostenlose Firmen-Datenbank gibt, bleibt Hunter als zweite,
-    # parallele Quelle aktiv (deckt Faelle ab, in denen die KI-Websuche nichts findet).
+    # (Hunter Discover) kam die Firma bereits aus einer kostenlosen Datenbank-Suche,
+    # und find_decisionmaker (OpenAI) findet die Email dort ohnehin kostenlos -- ein
+    # zusaetzlicher bezahlter Hunter-Abgleich waere doppelte Kosten fuer denselben
+    # Zweck. Nur im Maps-Modus, wo es keine alternative kostenlose Firmen-Datenbank
+    # gibt, bleibt Hunter als zweite, parallele Quelle aktiv (deckt Faelle ab, in
+    # denen die KI-Websuche nichts findet).
     run_hunt_persons = source == "maps"
     for b in (
         sb()
