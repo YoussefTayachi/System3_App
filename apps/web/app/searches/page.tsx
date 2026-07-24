@@ -89,7 +89,7 @@ export default async function SearchesPage() {
                   <div className="flex items-center gap-2.5">
                     <span className="truncate font-medium text-ink">{s.name}</span>
                     <span className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-soft">
-                      {s.source === "corporate" ? "Corporate" : "Maps"}
+                      {s.source === "corporate" ? "Corporate" : s.source === "instantly" ? "Instantly" : "Maps"}
                     </span>
                     {s.schedule !== "none" && (
                       <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-600 dark:text-sky-300">

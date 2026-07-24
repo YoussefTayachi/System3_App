@@ -2,6 +2,7 @@
 from worker.pipelines.find_decisionmaker import parse_persons
 from worker.pipelines.get_businesses import parse_place
 from worker.pipelines.hunt_persons import extract_domain, parse_hunter_emails
+from worker.pipelines.instantly_search import build_search_filters, parse_instantly_company
 
 
 def test_parse_place_full():
@@ -230,3 +231,61 @@ def test_suppression_matching():
     assert is_suppressed(emails, domains, website="http://kunde-gmbh.at")
     assert not is_suppressed(emails, domains, email="jemand@anders.de")
     assert not is_suppressed(emails, domains, website="https://anders.de")
+
+
+def test_build_search_filters_maps_all_fields():
+    sf = build_search_filters(
+        {
+            "city": "Vienna",
+            "country": "AT",
+            "industry": "Software Development",
+            "headcount": "11-50",
+            "keywords": "makler, vorsorge",
+            "job_title": "CEO",
+        }
+    )
+    assert sf["locations"] == ["Vienna, AT"]
+    assert sf["industry"] == {"include": ["Software Development"]}
+    assert sf["employee_count"] == ["25 - 100"]
+    assert sf["keyword_filter"] == {"include": ["makler", "vorsorge"], "match": "any"}
+    assert sf["title"] == {"include": ["CEO"]}
+
+
+def test_build_search_filters_partial():
+    sf = build_search_filters({"industry": "Legal Services"})
+    assert sf == {"industry": {"include": ["Legal Services"]}}
+
+
+def test_build_search_filters_unknown_headcount_ignored():
+    # Kein Instantly-Bucket fuer einen unbekannten Wert -> Filter wird weggelassen
+    # statt einen falschen Bucket zu raten.
+    sf = build_search_filters({"headcount": "does-not-exist", "industry": "Retail"})
+    assert "employee_count" not in sf
+    assert sf["industry"] == {"include": ["Retail"]}
+
+
+def test_build_search_filters_requires_at_least_one_filter():
+    try:
+        build_search_filters({})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("erwartete ValueError bei leeren Filtern")
+
+
+def test_parse_instantly_company_full():
+    row = parse_instantly_company(
+        {"company_name": "Acme Corp", "company_domain": "acme.com", "website": "https://acme.com"}
+    )
+    assert row == {"place_id": None, "name": "Acme Corp", "website": "https://acme.com"}
+
+
+def test_parse_instantly_company_derives_website_from_domain():
+    row = parse_instantly_company({"company_name": "Beispiel GmbH", "company_domain": "beispiel.at"})
+    assert row["website"] == "https://beispiel.at"
+
+
+def test_parse_instantly_company_minimal():
+    row = parse_instantly_company({})
+    assert row["name"] == "NA"
+    assert row["website"] is None

@@ -68,7 +68,7 @@ export default async function SearchDetailPage({
             initialInstantlyCampaignId={search.instantly_campaign_id ?? null}
           />
           <span className="rounded-full border border-edge2 bg-chip px-2 py-0.5 text-[11px] text-soft">
-            {search.source === "corporate" ? "Corporate" : "Maps"}
+            {search.source === "corporate" ? "Corporate" : search.source === "instantly" ? "Instantly" : "Maps"}
           </span>
         </div>
         <p className="text-sm text-faint">
