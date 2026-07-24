@@ -244,7 +244,7 @@ def test_build_search_filters_maps_all_fields():
             "job_title": "CEO",
         }
     )
-    assert sf["locations"] == ["Vienna, AT"]
+    assert sf["locations"] == {"include": [{"city": "Vienna", "country": "AT"}]}
     assert sf["industry"] == {"include": ["Software Development"]}
     assert sf["employee_count"] == ["25 - 100"]
     assert sf["keyword_filter"] == {"include": ["makler", "vorsorge"], "match": "any"}

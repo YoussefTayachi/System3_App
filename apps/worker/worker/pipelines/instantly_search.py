@@ -48,6 +48,22 @@ def _headers(api_key: str) -> dict:
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
 
+def _raise_for_status_verbose(r: httpx.Response) -> None:
+    """httpx.raise_for_status() haengt den Response-Body nicht an die
+    Exception-Message an -- ohne das ist ein 400 von Instantly nicht
+    diagnostizierbar (landet nur als 'Client error 400 Bad Request' in
+    searches.error). Instantly liefert bei Validierungsfehlern i.d.R. eine
+    JSON-Fehlermeldung im Body, die haengen wir an."""
+    if r.is_success:
+        return
+    detail = r.text[:500]
+    raise httpx.HTTPStatusError(
+        f"{r.status_code} {r.reason_phrase} for url '{r.url}': {detail}",
+        request=r.request,
+        response=r,
+    )
+
+
 def build_search_filters(filters: dict) -> dict:
     """Erzeugt search_filters aus unseren unified Such-Filtern (pure, testbar).
 
@@ -59,9 +75,13 @@ def build_search_filters(filters: dict) -> dict:
     gegen einen echten Account verifiziert werden.
     """
     sf: dict = {}
-    loc = ", ".join(p for p in [filters.get("city"), filters.get("country")] if p)
-    if loc:
-        sf["locations"] = [loc]
+    location: dict = {}
+    if filters.get("city"):
+        location["city"] = filters["city"]
+    if filters.get("country"):
+        location["country"] = filters["country"]
+    if location:
+        sf["locations"] = {"include": [location]}
     if filters.get("industry"):
         sf["industry"] = {"include": [filters["industry"]]}
     if filters.get("headcount"):
@@ -93,7 +113,7 @@ def _create_search_list(search_filters: dict, api_key: str, limit: int) -> str:
         "skip_rows_without_email": False,
     }
     r = httpx.post(SEARCH_URL, json=body, headers=_headers(api_key), timeout=30)
-    r.raise_for_status()
+    _raise_for_status_verbose(r)
     return r.json()["resource_id"]
 
 
@@ -108,7 +128,7 @@ def _still_in_progress(payload: dict) -> bool:
 )
 def _poll_import_status(resource_id: str, api_key: str) -> dict:
     r = httpx.get(f"{STATUS_URL}/{resource_id}", headers=_headers(api_key), timeout=30)
-    r.raise_for_status()
+    _raise_for_status_verbose(r)
     return r.json()
 
 
@@ -126,7 +146,7 @@ def _wait_for_import(resource_id: str, api_key: str) -> None:
 def _list_leads(resource_id: str, api_key: str, limit: int) -> list[dict]:
     body = {"filter": {"list_id": resource_id}, "limit": min(limit, 100)}
     r = httpx.post(LEADS_LIST_URL, json=body, headers=_headers(api_key), timeout=30)
-    r.raise_for_status()
+    _raise_for_status_verbose(r)
     return r.json().get("items") or []
 
 
